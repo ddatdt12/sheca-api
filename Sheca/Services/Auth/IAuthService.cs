@@ -1,7 +1,10 @@
-﻿namespace Sheca.Services.Auth
+﻿using Sheca.Models;
+
+namespace Sheca.Services.Auth
 {
     public interface IAuthService
     {
-        public bool Login(string email, string password);
+        string CreateToken(User user);
+        //string ValidateToken(string token);
     }
 }
