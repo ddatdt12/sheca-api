@@ -14,7 +14,7 @@ namespace Sheca.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
         }
-        //public DbSet<User> Users => Set<User>();
+        public DbSet<User> Users => Set<User>();
 
         public override int SaveChanges()
         {

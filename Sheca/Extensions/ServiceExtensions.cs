@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Sheca.Services.Auth;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
 
@@ -20,6 +21,7 @@ namespace Sheca.Extensions
 
         public static void ConfigureRepository(this IServiceCollection services) =>
             services
+            .AddScoped<IAuthService,AuthService>()
             .AddSingleton<IDictionary<string, string>>(_ => new Dictionary<string, string>());
         public static void ConfigureSwaggerOptions(this SwaggerGenOptions options)
         {
