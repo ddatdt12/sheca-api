@@ -20,10 +20,9 @@ namespace Sheca.Services.Auth
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
-              {
-                        new Claim(ClaimTypes.Name, user.Name),
+                {
                         new Claim("UserId", user.Id.ToString())
-              }),
+                }),
                 Expires = DateTime.UtcNow.AddDays(30),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
             };

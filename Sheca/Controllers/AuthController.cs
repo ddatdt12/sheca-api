@@ -50,7 +50,12 @@ namespace Sheca.Controllers
         {
             user.Email = userRequest.Email;
             user.Password = userRequest.Password;
-            return Ok(user);
+            string token = _auth.CreateToken(user);
+            return Ok(new
+            {
+                data = user,
+                token = token
+            });
         }
     }
 }

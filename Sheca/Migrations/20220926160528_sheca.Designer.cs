@@ -12,8 +12,8 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20220925130226_UserModel")]
-    partial class UserModel
+    [Migration("20220926160528_sheca")]
+    partial class sheca
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -31,10 +31,6 @@ namespace Sheca.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
