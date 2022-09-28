@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sheca.Models;
 
@@ -11,9 +12,10 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20220928090243_CourseTaskUpdate")]
+    partial class CourseTaskUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,7 +52,7 @@ namespace Sheca.Migrations
                     b.Property<int?>("NotiBeforeTime")
                         .HasColumnType("int");
 
-                    b.Property<int>("NumOfLessons")
+                    b.Property<int?>("NumOfLessons")
                         .HasColumnType("int");
 
                     b.Property<int>("NumOfLessonsPerDay")
@@ -101,10 +103,10 @@ namespace Sheca.Migrations
                     b.Property<int?>("NotiBeforeTime")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("RecurringEnd")
+                    b.Property<DateTime>("RecurringEnd")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("RecurringInterval")
+                    b.Property<int>("RecurringInterval")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("RecurringStart")

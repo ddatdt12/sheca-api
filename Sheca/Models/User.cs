@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Sheca.Models
 {
+    [Table("User")]
     public class User
     {
         public User()
@@ -12,7 +15,6 @@ namespace Sheca.Models
 
         public Guid Id { get; set; }
         public string Email { get; set; }
-
         public string Password { get; set; }
         public string Name { get; set; }
 

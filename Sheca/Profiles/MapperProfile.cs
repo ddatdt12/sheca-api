@@ -1,4 +1,6 @@
 using AutoMapper;
+using Sheca.Dtos;
+using Sheca.Models;
 
 public class MapperProfile : Profile
 {
@@ -8,7 +10,16 @@ public class MapperProfile : Profile
 
         //CreateMap<User, UserDto>();
         //CreateMap<UserDto, User>();
-        //CreateMap<CreatePostDto, Post>()
-        //    .ForMember(p => p.Tags, options => options.MapFrom(p => string.Join(';', p.Tags).Replace(" ","")));
+        CreateMap<EventDto, Task>();
+        CreateMap<Task, EventDto>();
+
+        //Course
+        CreateMap<CourseDto, Course>();
+        CreateMap<Course, CourseDto>();
+        CreateMap<CreateCourseDto, Course>();
+        CreateMap<UpdateEventDto, Course>();
+
+        //Event
+        CreateMap<Event, EventDto>();
     }
 }

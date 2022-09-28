@@ -1,4 +1,4 @@
-﻿namespace Sheca.Services.Auth
+﻿namespace Sheca.Services
 {
     public interface IAuthService
     {

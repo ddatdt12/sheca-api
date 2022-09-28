@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Sheca.Error;
 using Sheca.Models;
-using Sheca.Services.Auth;
+using Sheca.Services;
 
 namespace Sheca.Controllers
 {
