@@ -13,11 +13,13 @@ namespace Sheca.Controllers
         private readonly ILogger<AuthController> _logger;
         public static User user = new User();
         private readonly IAuthService _auth;
+        public DataContext _context { get; set; }
 
-        public AuthController(ILogger<AuthController> logger, IAuthService auth)
+        public AuthController(ILogger<AuthController> logger, IAuthService auth, DataContext context)
         {
             _logger = logger;
             _auth = auth;
+            _context = context;
         }
 
         [HttpGet]
@@ -40,7 +42,7 @@ namespace Sheca.Controllers
             string token = _auth.CreateToken(user);
             return Ok(new
             {
-                data = user,
+                message = "Login successfully",
                 token = token
             });
         }
@@ -48,12 +50,19 @@ namespace Sheca.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserDTO userRequest)
         {
+            var item = _context.Users.Where(u => u.Email.Trim().ToLower() == userRequest.Email.Trim().ToLower()).FirstOrDefault();
+            if(item != null)
+            {
+                return BadRequest(new ApiException("Email have already existed!!!", 400));
+            }
             user.Email = userRequest.Email;
             user.Password = userRequest.Password;
             string token = _auth.CreateToken(user);
+            _context.Add(user);
+            _context.SaveChanges();
             return Ok(new
             {
-                data = user,
+                message = "Register successfully",
                 token = token
             });
         }
