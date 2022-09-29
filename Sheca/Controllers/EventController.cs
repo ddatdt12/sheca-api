@@ -25,9 +25,9 @@ namespace Sheca.Controllers
 
         [HttpGet]
         [Produces(typeof(ApiResponse<IEnumerable<EventDto>>))]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] FilterEvent filter)
         {
-            var events = await _eventService.Get();
+            var events = await _eventService.Get(filter);
 
             var eventDtos = _mapper.Map<IEnumerable<Event>, IEnumerable<EventDto>>(events);
             return Ok(new ApiResponse<IEnumerable<EventDto>>(eventDtos, "Get Events successfully"));
