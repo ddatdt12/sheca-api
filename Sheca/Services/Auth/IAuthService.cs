@@ -6,5 +6,6 @@ namespace Sheca.Services.Auth
     {
         string CreateToken(User user);
         string ValidateToken(string token);
+        void Login(User user);
     }
 }

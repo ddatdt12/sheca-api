@@ -9,9 +9,11 @@ namespace Sheca.Services.Auth
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _configuration;
-        public AuthService(IConfiguration configuration)
+        public DataContext _context { get; set; }
+        public AuthService(IConfiguration configuration, DataContext context)
         {
             _configuration = configuration;
+            _context = context;
         }
         public string CreateToken(User user)
         {
@@ -22,8 +24,6 @@ namespace Sheca.Services.Auth
                 Subject = new ClaimsIdentity(new Claim[]
                 {
                     new Claim("UserId", user.Id.ToString()),
-                    new Claim("Email", user.Email),
-                    new Claim("Password", user.Password),
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
@@ -56,6 +56,19 @@ namespace Sheca.Services.Auth
             {
                 return null;
             }
+        }
+        public (User?, string? token) FindUserByEmailAndPassword(string email, string password)
+        {
+            var user = _context.Users.Where(u => u.Email.Trim().ToLower() == email.Trim().ToLower() && u.Password == password).FirstOrDefault();
+            if(user == null)
+            {
+                return (null, null);
+            }
+            return (user, CreateToken(user));
+        }
+        public bool FindUserByEmai(string email)
+        {
+            return _context.Users.Where(u => u.Email.Trim().ToLower() == email.Trim().ToLower()).FirstOrDefault() == null ? false : true;
         }
     }
 }
