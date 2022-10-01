@@ -1,4 +1,8 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Sheca.Dtos;
+using Sheca.Error;
 using Sheca.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,11 +13,13 @@ namespace Sheca.Services.Auth
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
         public DataContext _context { get; set; }
-        public AuthService(IConfiguration configuration, DataContext context)
+        public AuthService(IConfiguration configuration, DataContext context, IMapper mapper)
         {
             _configuration = configuration;
             _context = context;
+            _mapper = mapper;
         }
         public string CreateToken(User user)
         {
@@ -57,18 +63,45 @@ namespace Sheca.Services.Auth
                 return null;
             }
         }
-        public (User?, string? token) FindUserByEmailAndPassword(string email, string password)
+        public async Task<(User?, string? token)> Login(UserDTO userDTO)
         {
-            var user = _context.Users.Where(u => u.Email.Trim().ToLower() == email.Trim().ToLower() && u.Password == password).FirstOrDefault();
-            if(user == null)
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            if (user == null)
             {
-                return (null, null);
+                throw new ApiException("User not found!", 400);
+            } else if(user.Password != userDTO.Password)
+            {
+                throw new ApiException("Wrong password!", 400);
             }
             return (user, CreateToken(user));
         }
-        public bool FindUserByEmai(string email)
+        public async Task<(User?, string? token)> Register(UserDTO userDTO)
         {
-            return _context.Users.Where(u => u.Email.Trim().ToLower() == email.Trim().ToLower()).FirstOrDefault() == null ? false : true;
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            if (user != null)
+            {
+                throw new ApiException("Email have already existed!", 400);
+            }
+            User _user = _mapper.Map<User>(userDTO);
+            _context.Add(_user);
+            _context.SaveChanges();
+            return (user, CreateToken(_user));
+        }
+        public async Task<bool> FindUserByEmai(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
+        }
+        public async Task ResetPassword(UserDTO userDTO)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == userDTO.Email.Trim().ToLower());
+            if (user == null)
+            {
+                throw new ApiException("Invalid User",400);
+            }
+            user.Password = userDTO.Password;
+            _context.Users.Update(user);
+            _context.SaveChanges();
+            return;
         }
     }
 }

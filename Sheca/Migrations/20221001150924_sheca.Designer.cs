@@ -12,8 +12,8 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221001101855_UserModel")]
-    partial class UserModel
+    [Migration("20221001150924_sheca")]
+    partial class sheca
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

@@ -1,4 +1,5 @@
-﻿using Sheca.Models;
+﻿using Sheca.Dtos;
+using Sheca.Models;
 
 namespace Sheca.Services.Auth
 {
@@ -6,7 +7,9 @@ namespace Sheca.Services.Auth
     {
         string CreateToken(User user);
         string ValidateToken(string token);
-        public (User?, string? token) FindUserByEmailAndPassword(string email, string password);
-        bool FindUserByEmai(string emai);
+        public Task<(User?, string? token)> Login(UserDTO userDTO);
+        public Task<(User?, string? token)> Register(UserDTO userDTO);
+        public Task<bool> FindUserByEmai(string email);
+        public Task ResetPassword(UserDTO userDTO);
     }
 }
