@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Sheca.Models;
 using Microsoft.AspNetCore.Authorization;
+using Sheca.Attributes;
 
 namespace Sheca.Controllers
 {
+    [ApiController]
+    [Route("users")]
     public class UserController : Controller
     {
         public DataContext _context { get; set; }
@@ -11,7 +14,8 @@ namespace Sheca.Controllers
         {
             _context = context;
         }
-        [Authorize]
+
+        [Protect]
         [HttpGet("user")]
         public async Task<IActionResult> GetUser()
         {

@@ -28,7 +28,6 @@ namespace Sheca.Controllers
             if (user == null)
             {
                 return NotFound(new ApiException("Email or password is wrong", 400));
-                    
             }
             return Ok(new
             {
@@ -40,7 +39,7 @@ namespace Sheca.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserDTO registerUser)
         {
-            if (!_auth.FindUserByEmai(registerUser.Email))
+            if (_auth.FindUserByEmai(registerUser.Email))
             {
                 return BadRequest(new ApiException("Email have already existed!!!", 400));
             }
