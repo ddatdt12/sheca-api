@@ -134,10 +134,6 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -145,15 +141,6 @@ namespace Sheca.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("User");
-                });
-
-            modelBuilder.Entity("Sheca.Models.Event", b =>
-                {
-                    b.HasOne("Sheca.Models.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId");
-
-                    b.Navigation("Course");
                 });
 #pragma warning restore 612, 618
         }

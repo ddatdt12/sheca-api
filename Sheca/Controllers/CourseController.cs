@@ -32,7 +32,7 @@ namespace Sheca.Controllers
         }
 
         [HttpPost]
-        [Produces(typeof(ApiResponse<EventDto>))]
+        [Produces(typeof(ApiResponse<CourseDto>))]
         public async Task<IActionResult> Create([FromBody] CreateCourseDto course)
         {
             var c = await _courseService.Create(course);
@@ -40,7 +40,7 @@ namespace Sheca.Controllers
         }
         
         [HttpPut("{id}")]
-        [Produces(typeof(NoContentResult))]
+        [Produces(typeof(ApiResponse<CourseDto>))]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCourseDto course)
         {
             var c = await _courseService.Update(id, course);

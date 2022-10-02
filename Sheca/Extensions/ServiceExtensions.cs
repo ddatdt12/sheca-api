@@ -24,6 +24,8 @@ namespace Sheca.Extensions
             .AddScoped<IAuthService, AuthService>()
             .AddScoped<ICourseService, CourseService>()
             .AddScoped<IEventService, EventService>()
+            .AddScoped<IAuthService,AuthService>()
+            .AddScoped<IUserService,UserService>()
             .AddSingleton<IDictionary<string, string>>(_ => new Dictionary<string, string>());
         public static void ConfigureSwaggerOptions(this SwaggerGenOptions options)
         {

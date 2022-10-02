@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos.Settings;
 using Sheca.Extensions;
+using Sheca.Middlewares;
 using Sheca.Models;
 using System.Text.Json.Serialization;
 
@@ -33,7 +34,6 @@ builder.Services.AddDbContext<DataContext>(options =>
 );
 builder.Services.ConfigureRepository();
 builder.Services.AddAutoMapper(typeof(Program));
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -48,12 +48,12 @@ if (app.Environment.IsDevelopment())
 app.ConfigureExceptionHandler(app.Logger);
 app.UseHttpsRedirection();
 app.UseRouting();
-
 app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseMiddleware<JwtMiddleware>();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
