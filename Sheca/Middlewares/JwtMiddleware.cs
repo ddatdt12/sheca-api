@@ -9,13 +9,11 @@ namespace Sheca.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly IConfiguration _configuration;
-        private readonly IUserService _userService;
 
-        public JwtMiddleware(RequestDelegate next, IConfiguration configuration, IUserService userService)
+        public JwtMiddleware(RequestDelegate next, IConfiguration configuration)
         {
             _next = next;
             _configuration = configuration;
-            _userService = userService;
         }
 
 
@@ -49,7 +47,7 @@ namespace Sheca.Middlewares
                 return null;
             }
         }
-        public async Task Invoke(HttpContext context)
+        public async Task Invoke(HttpContext context, IUserService userService)
         {
             var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
             if (token != null)
@@ -58,7 +56,7 @@ namespace Sheca.Middlewares
                 if (userId != null)
                 {
                     // attach user to context on successful jwt validation
-                    context.Items["User"] = await _userService.GetById(new Guid(userId));
+                    context.Items["User"] = await userService.GetById(new Guid(userId));
                 }
             }
             await _next(context);

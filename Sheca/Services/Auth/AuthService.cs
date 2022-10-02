@@ -63,7 +63,7 @@ namespace Sheca.Services.Auth
                 return null;
             }
         }
-        public async Task<(User?, string? token)> Login(UserDTO userDTO)
+        public async Task<(User, string token)> Login(UserDTO userDTO)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
             if (user == null)
@@ -75,7 +75,7 @@ namespace Sheca.Services.Auth
             }
             return (user, CreateToken(user));
         }
-        public async Task<(User?, string? token)> Register(UserDTO userDTO)
+        public async Task<(User, string token)> Register(UserDTO userDTO)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
             if (user != null)
@@ -85,7 +85,7 @@ namespace Sheca.Services.Auth
             User _user = _mapper.Map<User>(userDTO);
             _context.Add(_user);
             _context.SaveChanges();
-            return (user, CreateToken(_user));
+            return (_user, CreateToken(_user));
         }
         public async Task<bool> FindUserByEmai(string email)
         {

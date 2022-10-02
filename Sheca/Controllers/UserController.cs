@@ -2,6 +2,7 @@
 using Sheca.Models;
 using Microsoft.AspNetCore.Authorization;
 using Sheca.Attributes;
+using Microsoft.EntityFrameworkCore;
 
 namespace Sheca.Controllers
 {
@@ -16,12 +17,12 @@ namespace Sheca.Controllers
         }
 
         [Protect]
-        [HttpGet("user")]
+        [HttpGet]
         public async Task<IActionResult> GetUser()
         {
             return Ok(new
             {
-                data = _context.Users.OrderBy(u => u.Id).ToList()
+                data = await _context.Users.OrderBy(u => u.Id).ToListAsync()
             });
         }
     }

@@ -14,7 +14,7 @@ namespace Sheca.Controllers
         private readonly IAuthService _auth;
         public DataContext _context { get; set; }
 
-        public AuthController( IAuthService auth, DataContext context)
+        public AuthController(IAuthService auth, DataContext context)
         {
             _auth = auth;
             _context = context;
@@ -23,14 +23,14 @@ namespace Sheca.Controllers
         public async Task<IActionResult> Login(UserDTO loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
-            return Ok(new{message = "Login successfully.", token });
+            return Ok(new { message = "Login successfully.", data = user, token });
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserDTO registerUser)
         {
-            (User? user, string? token) = await _auth.Register(registerUser);
-            return Ok(new{message = "Register successfully.",token});
+            (User user, string token) = await _auth.Register(registerUser);
+            return Ok(new { message = "Register successfully.", token });
         }
 
         [HttpPost("forgot-password")]
