@@ -1,7 +1,15 @@
-﻿namespace Sheca.Services.Auth
+﻿using Sheca.Dtos;
+using Sheca.Models;
+
+namespace Sheca.Services.Auth
 {
     public interface IAuthService
     {
-        public bool Login(string email, string password);
+        string CreateToken(User user);
+        string ValidateToken(string token);
+        public Task<(User, string token)> Login(UserDTO userDTO);
+        public Task<(User, string token)> Register(UserDTO userDTO);
+        public Task<bool> FindUserByEmai(string email);
+        public Task ResetPassword(UserDTO userDTO);
     }
 }
