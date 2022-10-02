@@ -1,4 +1,6 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Sheca.Dtos;
 using Sheca.Error;
 using Sheca.Models;
 using Sheca.Services.Auth;
@@ -9,32 +11,46 @@ namespace Sheca.Controllers
     [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly ILogger<AuthController> _logger;
-        private readonly IAuthService _authService;
+        private readonly IAuthService _auth;
+        public DataContext _context { get; set; }
 
-        public AuthController(ILogger<AuthController> logger, IAuthService authService)
+        public AuthController(IAuthService auth, DataContext context)
         {
-            _logger = logger;
-            _authService = authService;
+            _auth = auth;
+            _context = context;
         }
-
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Ok();
-        }
-
         [HttpPost("login")]
-        public IActionResult Login()
+        public async Task<IActionResult> Login(UserDTO loginUser)
         {
-            _authService.Login("", "");
-            return Ok();
+            (User? user, string? token) = await _auth.Login(loginUser);
+            return Ok(new { message = "Login successfully.", data = user, token });
         }
 
         [HttpPost("register")]
-        public IActionResult Register()
+        public async Task<IActionResult> Register(UserDTO registerUser)
         {
-            return Ok();
+            (User user, string token) = await _auth.Register(registerUser);
+            return Ok(new { message = "Register successfully.", token });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            if (!(await _auth.FindUserByEmai(email)))
+            {
+                return BadRequest("User not found.");
+            }
+            else
+            {
+                return Ok("You may now reset your password.");
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(UserDTO reUser)
+        {
+            await _auth.ResetPassword(reUser);
+            return Ok("Reset Password successfully.");
         }
     }
 }
