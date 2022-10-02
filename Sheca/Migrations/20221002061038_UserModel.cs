@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Sheca.Migrations
 {
-    public partial class sheca : Migration
+    public partial class UserModel : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
