@@ -29,8 +29,8 @@ namespace Sheca.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserDTO registerUser)
         {
-            (User user, string token) = await _auth.Register(registerUser);
-            return Ok(new { message = "Register successfully.", token });
+            await _auth.Register(registerUser);
+            return Ok(new { message = "Send email verification successfully" });
         }
 
         [HttpPost("forgot-password")]

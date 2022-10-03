@@ -1,9 +1,11 @@
 ﻿
+using CliverApi.Services.Mail;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Sheca.Services;
 using Sheca.Services.Auth;
+using Sheca.Services.Mail;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
 
@@ -24,6 +26,7 @@ namespace Sheca.Extensions
             services
             .AddScoped<IAuthService,AuthService>()
             .AddScoped<IUserService,UserService>()
+            .AddScoped<IMailService,MailService>()
             .AddSingleton<IDictionary<string, string>>(_ => new Dictionary<string, string>());
         public static void ConfigureSwaggerOptions(this SwaggerGenOptions options)
         {

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CliverApi.Services.Mail;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Sheca.Dtos;
@@ -14,12 +15,15 @@ namespace Sheca.Services.Auth
     {
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
+        private readonly IMailService _mailService;
+        private static IDictionary<string, Token> ListTokenAccount = new Dictionary<string, Token>();
         public DataContext _context { get; set; }
-        public AuthService(IConfiguration configuration, DataContext context, IMapper mapper)
+        public AuthService(IConfiguration configuration, DataContext context, IMapper mapper, IMailService mailService)
         {
             _configuration = configuration;
             _context = context;
             _mapper = mapper;
+            _mailService = mailService;
         }
         public string CreateToken(User user)
         {
@@ -75,17 +79,17 @@ namespace Sheca.Services.Auth
             }
             return (user, CreateToken(user));
         }
-        public async Task<(User, string token)> Register(UserDTO userDTO)
+        public async Task Register(UserDTO userDTO)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
             if (user != null)
             {
                 throw new ApiException("Email have already existed!", 400);
             }
+            var tokenCode = await _mailService.SendRegisterMail(userDTO.Email);
             User _user = _mapper.Map<User>(userDTO);
-            _context.Add(_user);
-            _context.SaveChanges();
-            return (_user, CreateToken(_user));
+            var code = new Token { Value = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(5), User = _user };
+            ListTokenAccount.Add(_user.Email, code);
         }
         public async Task<bool> FindUserByEmai(string email)
         {
@@ -98,10 +102,9 @@ namespace Sheca.Services.Auth
             {
                 throw new ApiException("Invalid User",400);
             }
-            user.Password = userDTO.Password;
-            _context.Users.Update(user);
-            _context.SaveChanges();
-            return;
+
+            _mapper.Map(userDTO, user);
+            await _context.SaveChangesAsync();
         }
     }
 }
