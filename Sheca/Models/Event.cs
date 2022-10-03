@@ -25,6 +25,8 @@ namespace Sheca.Models
         public int? NotiBeforeTime { get; set; }
         public Guid? BaseEvent { get; set; }
         public int? CourseId { get; set; }
+        public Guid UserId { get; set; }
+        public User? User{ get; set; }
         public Course? Course { get; set; }
         public DateTime? RecurringStart { get; set; }
         public int? RecurringInterval { get; set; }

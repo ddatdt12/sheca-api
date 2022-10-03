@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Sheca.Attributes;
 using Sheca.Dtos;
 using Sheca.DTOs;
 using Sheca.Models;
@@ -17,11 +18,9 @@ namespace Sheca.Controllers
         public EventController(ILogger<EventController> logger, IAuthService authService, IEventService eventService, IMapper mapper)
         {
             _logger = logger;
-            _eventService=eventService;
-            _mapper=mapper;
+            _eventService = eventService;
+            _mapper = mapper;
         }
-
-
 
         [HttpGet]
         [Produces(typeof(ApiResponse<IEnumerable<EventDto>>))]
@@ -33,12 +32,26 @@ namespace Sheca.Controllers
             return Ok(new ApiResponse<IEnumerable<EventDto>>(eventDtos, "Get Events successfully"));
         }
 
+        [Protect]
         [HttpPost]
         [Produces(typeof(ApiResponse<EventDto>))]
-        public IActionResult CreateEvent([FromBody] CreateEventDto newE)
+        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto newE)
         {
-            return Ok();
+            var userId = HttpContext.Items["UserId"];
+            var @event = await _eventService.Create(newE, userId!.ToString()!);
+            return Ok(new ApiResponse<EventDto>(_mapper.Map<EventDto>(@event), "Create event successfully"));
         }
+
+        [Protect]
+        [HttpDelete("{id}")]
+        [Produces(typeof(ApiResponse<EventDto>))]
+        public async Task<IActionResult> DeleteEvent(Guid id)
+        {
+            var userId = HttpContext.Items["UserId"] as string;
+            await _eventService.Delete(id, userId!);
+            return Ok(new ApiResponse<EventDto>(_mapper.Map<EventDto>(@event), "Create event successfully"));
+        }
+            
 
     }
 }

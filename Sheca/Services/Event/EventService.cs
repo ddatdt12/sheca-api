@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos;
+using Sheca.Error;
 using Sheca.Models;
 
 namespace Sheca.Services
@@ -7,15 +9,22 @@ namespace Sheca.Services
     public class EventService : IEventService
     {
         public readonly DataContext _context;
+        private readonly IMapper _mapper;
 
-        public EventService(DataContext context)
+        public EventService(DataContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        Task<Event> IEventService.Create(Event e)
+        async Task<Event> IEventService.Create(CreateEventDto e, string userId)
         {
-            throw new NotImplementedException();
+            Event @event = _mapper.Map<Event>(e);
+            @event.UserId = new Guid(userId);
+            _context.Events.Add(@event);
+            await _context.SaveChangesAsync();
+
+            return @event;
         }
 
         async Task<IEnumerable<Event>> IEventService.Get(FilterEvent filter)
@@ -29,10 +38,21 @@ namespace Sheca.Services
             if (filter.ToDate.HasValue)
             {
                 var enDate = filter.ToDate.Value.Date.AddDays(1);
-                query = query.Where(e => e.StartTime < enDate); 
+                query = query.Where(e => e.StartTime < enDate);
             }
 
             return await query.ToListAsync();
+        }
+
+        async Task IEventService.Delete(Guid id, string userId)
+        {
+            var e = await _context.Events.FindAsync(id);
+            if (e == null || e.UserId.ToString() == userId)
+            {
+                throw new ApiException("Event not found", 404);
+            }
+            _context.Events.Remove(e);
+            await _context.SaveChangesAsync();
         }
 
         Task<Event> IEventService.GetById(int Id)

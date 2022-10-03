@@ -8,11 +8,6 @@ public class MapperProfile : Profile
     {
         CreateMap<int?, int>().ConvertUsing((src, dest) => src ?? dest);
 
-        //CreateMap<User, UserDto>();
-        //CreateMap<UserDto, User>();
-        CreateMap<EventDto, Task>();
-        CreateMap<Task, EventDto>();
-
         //Course
         CreateMap<CourseDto, Course>();
         CreateMap<Course, CourseDto>();
@@ -21,9 +16,13 @@ public class MapperProfile : Profile
 
         //Event
         CreateMap<Event, EventDto>();
+        CreateMap<CreateEventDto, Event>();
+
+
         CreateMap<User, UserDTO>();
         CreateMap<UserDTO, User>();
         //CreateMap<CreatePostDto, Post>()
         //    .ForMember(p => p.Tags, options => options.MapFrom(p => string.Join(';', p.Tags).Replace(" ","")));
+
     }
 }

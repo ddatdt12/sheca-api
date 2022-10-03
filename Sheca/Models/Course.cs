@@ -27,5 +27,7 @@ namespace Sheca.Models
         public int NumOfLessons { get; set; }
         public int? NotiBeforeTime { get; set; }
         public string ColorCode { get; set; }
+        public Guid UserId { get; set; }
+        public User? User{ get; set; }
     }
 }
