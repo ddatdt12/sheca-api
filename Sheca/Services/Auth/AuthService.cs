@@ -64,26 +64,26 @@ namespace Sheca.Services
                 return null;
             }
         }
-        public async Task<(User, string token)> Login(UserDTO userDTO)
+        public async Task<(User, string token)> Login(LoginUserDto UserDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
             if (user == null)
             {
                 throw new ApiException("User not found!", 400);
-            } else if(user.Password != userDTO.Password)
+            } else if(user.Password != UserDto.Password)
             {
                 throw new ApiException("Wrong password!", 400);
             }
             return (user, CreateToken(user));
         }
-        public async Task<(User, string token)> Register(UserDTO userDTO)
+        public async Task<(User, string token)> Register(RegisterUserDto UserDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
             if (user != null)
             {
                 throw new ApiException("Email have already existed!", 400);
             }
-            User _user = _mapper.Map<User>(userDTO);
+            User _user = _mapper.Map<User>(UserDto);
             _context.Add(_user);
             _context.SaveChanges();
             return (_user, CreateToken(_user));
@@ -92,14 +92,14 @@ namespace Sheca.Services
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
         }
-        public async Task ResetPassword(UserDTO userDTO)
+        public async Task ResetPassword(RegisterUserDto UserDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == userDTO.Email.Trim().ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == UserDto.Email.Trim().ToLower());
             if (user == null)
             {
                 throw new ApiException("Invalid User",400);
             }
-            user.Password = userDTO.Password;
+            user.Password = UserDto.Password;
             _context.Users.Update(user);
             _context.SaveChanges();
             return;

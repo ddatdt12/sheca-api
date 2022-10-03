@@ -19,10 +19,9 @@ public class MapperProfile : Profile
         CreateMap<CreateEventDto, Event>();
 
 
-        CreateMap<User, UserDTO>();
-        CreateMap<UserDTO, User>();
-        //CreateMap<CreatePostDto, Post>()
-        //    .ForMember(p => p.Tags, options => options.MapFrom(p => string.Join(';', p.Tags).Replace(" ","")));
-
+        CreateMap<User, UserDto>();
+        CreateMap<UserDto, User>();
+        CreateMap<RegisterUserDto, User>();
+        CreateMap<LoginUserDto, User>();
     }
 }

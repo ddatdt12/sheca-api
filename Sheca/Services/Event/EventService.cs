@@ -27,9 +27,10 @@ namespace Sheca.Services
             return @event;
         }
 
-        async Task<IEnumerable<Event>> IEventService.Get(FilterEvent filter)
+        async Task<IEnumerable<Event>> IEventService.Get(string userId, FilterEvent filter)
         {
-            var query = _context.Events.AsQueryable();
+            var guidUserId = new Guid(userId);
+            var query = _context.Events.Where(e => e.UserId == guidUserId);
 
             if (filter.FromDate.HasValue)
             {
