@@ -1,31 +1,28 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Sheca.Dtos;
-using Sheca.Error;
 using Sheca.Models;
 using Sheca.Services;
 
 namespace Sheca.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
         public DataContext _context { get; set; }
-        public IMapper _mapper { get; set; }
 
-        public AuthController(IAuthService auth, DataContext context, IMapper mapper)
+        public AuthController(IAuthService auth, DataContext context)
         {
             _auth = auth;
             _context = context;
-            _mapper = mapper;
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
-            return Ok(new { message = "Login successfully.", data = _mapper.Map<UserDto>(user), token });
+            return Ok(new { message = "Login successfully.", data = user, token });
         }
 
         [HttpPost("register")]
@@ -33,6 +30,13 @@ namespace Sheca.Controllers
         {
             await _auth.Register(registerUser);
             return Ok(new { message = "Send email verification successfully" });
+        }
+
+        [HttpPost("verify-account")]
+        public async Task<IActionResult> VerifyEmailToken(TokenDTO tokenDTO)
+        {
+            (User? user, string? token) = await _auth.VerifyEmailToken(tokenDTO);
+            return Ok(new { message = "Verify account successfully!", data = user, token });
         }
 
         [HttpPost("forgot-password")]

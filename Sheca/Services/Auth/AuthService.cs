@@ -5,8 +5,6 @@ using Microsoft.IdentityModel.Tokens;
 using Sheca.Dtos;
 using Sheca.Error;
 using Sheca.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -70,6 +68,7 @@ namespace Sheca.Services
                 return null;
             }
         }
+
         public async Task<(User, string token)> Login(LoginUserDto UserDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
@@ -82,25 +81,43 @@ namespace Sheca.Services
             }
             return (user, CreateToken(user));
         }
+
         public async Task Register(RegisterUserDto userDTO)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
             if (user != null)
             {
                 throw new ApiException("Email have already existed!", 400);
             }
             var tokenCode = await _mailService.SendRegisterMail(userDTO.Email);
             User _user = _mapper.Map<User>(userDTO);
-            var code = new Token { Value = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(5), User = _user };
+            var code = new Token { Code = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(5), User = _user };
             ListTokenAccount.Add(_user.Email, code);
         }
+
         public async Task<bool> FindUserByEmai(string email)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
         }
-        public async Task ResetPassword(RegisterUserDto UserDto)
+
+        public async Task<(User, string token)> VerifyEmailToken(TokenDTO tokenDTO)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == UserDto.Email.Trim().ToLower());
+            Token token;
+            if (!ListTokenAccount.TryGetValue(tokenDTO.Email, out token!) || tokenDTO.Code != token.Code || token.ExpiredAt < DateTime.Now)
+            {
+                throw new ApiException("Code is wrong or expired!", 400);
+            }
+            User user = new User();
+            _mapper.Map(token.User, user);
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+            ListTokenAccount.Remove(tokenDTO.Email);
+            return (user, CreateToken(user));
+        }
+
+        public async Task ResetPassword(RegisterUserDto userDTO)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == userDTO.Email.Trim().ToLower());
             if (user == null)
             {
                 throw new ApiException("Invalid User",400);
