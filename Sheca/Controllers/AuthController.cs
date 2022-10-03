@@ -42,14 +42,16 @@ namespace Sheca.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(string email)
         {
-            if (!(await _auth.FindUserByEmai(email)))
-            {
-                return BadRequest("User not found.");
+            if (!(await _auth.FindUserByEmai(email))){ return BadRequest("User not found."); }
+            else{ return Ok("Please check the code in your email. This code consists of 4 numbers.");
             }
-            else
-            {
-                return Ok("You may now reset your password.");
-            }
+        }
+
+        [HttpPost("verify-code-repassword")]
+        public async Task<IActionResult> VerifyResetPassword(string email, string code)
+        {
+            await _auth.VerifyResetPassword(email, code);
+            return Ok(new { message = "Verify code successfully!"});
         }
 
         [HttpPost("reset-password")]

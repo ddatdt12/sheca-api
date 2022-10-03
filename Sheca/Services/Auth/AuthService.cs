@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CliverApi.Services.Mail;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Sheca.Dtos;
@@ -18,6 +19,7 @@ namespace Sheca.Services
         private readonly IMapper _mapper;
         private readonly IMailService _mailService;
         private static IDictionary<string, Token> ListTokenAccount = new Dictionary<string, Token>();
+        private static IDictionary<string, string> ListResetPasswordAccount = new Dictionary<string, string>();
         public DataContext _context { get; set; }
         public AuthService(IConfiguration configuration, DataContext context, IMapper mapper, IMailService mailService)
         {
@@ -107,12 +109,35 @@ namespace Sheca.Services
             {
                 throw new ApiException("Code is wrong or expired!", 400);
             }
-            User user = new User();
-            _mapper.Map(token.User, user);
+            User user = new User
+            {
+                Email = token.User.Email,
+                Password = token.User.Password,
+            };
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             ListTokenAccount.Remove(tokenDTO.Email);
             return (user, CreateToken(user));
+        }
+
+        public async Task ForgotPassword(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(email.ToLower()));
+            if (user == null)
+            {
+                throw new ApiException("Invalid User", 400);
+            }
+            var rePasswordCode = await _mailService.SendResetPasswordMail(email);
+            ListResetPasswordAccount.Add(email, rePasswordCode);
+        }
+
+        public async Task VerifyResetPassword(string email, string value)
+        {
+            string code;
+            if (!ListResetPasswordAccount.TryGetValue(email, out code!) || value != code)
+            {
+                throw new ApiException("Code is wrong or expired!", 400);
+            }
         }
 
         public async Task ResetPassword(RegisterUserDto userDTO)

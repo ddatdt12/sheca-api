@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Sheca.Services;
-using Sheca.Services.Auth;
 using Sheca.Services.Mail;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
