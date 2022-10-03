@@ -5,11 +5,14 @@ using Microsoft.IdentityModel.Tokens;
 using Sheca.Dtos;
 using Sheca.Error;
 using Sheca.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Sheca.Services.Auth
+namespace Sheca.Services
 {
     public class AuthService : IAuthService
     {
@@ -67,21 +70,21 @@ namespace Sheca.Services.Auth
                 return null;
             }
         }
-        public async Task<(User, string token)> Login(UserDTO userDTO)
+        public async Task<(User, string token)> Login(LoginUserDto UserDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
             if (user == null)
             {
                 throw new ApiException("User not found!", 400);
-            } else if(user.Password != userDTO.Password)
+            } else if(user.Password != UserDto.Password)
             {
                 throw new ApiException("Wrong password!", 400);
             }
             return (user, CreateToken(user));
         }
-        public async Task Register(UserDTO userDTO)
+        public async Task Register(RegisterUserDto userDTO)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(userDTO.Email.ToLower()));
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
             if (user != null)
             {
                 throw new ApiException("Email have already existed!", 400);
@@ -95,14 +98,13 @@ namespace Sheca.Services.Auth
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
         }
-        public async Task ResetPassword(UserDTO userDTO)
+        public async Task ResetPassword(RegisterUserDto UserDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == userDTO.Email.Trim().ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == UserDto.Email.Trim().ToLower());
             if (user == null)
             {
                 throw new ApiException("Invalid User",400);
             }
-
             _mapper.Map(userDTO, user);
             await _context.SaveChangesAsync();
         }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sheca.Models;
 
@@ -11,9 +12,10 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20220928104741_FixTypeNumOfLessons")]
+    partial class FixTypeNumOfLessons
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -66,12 +68,7 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Course");
                 });
@@ -122,14 +119,9 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Event");
                 });
@@ -144,6 +136,10 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -153,32 +149,13 @@ namespace Sheca.Migrations
                     b.ToTable("User");
                 });
 
-            modelBuilder.Entity("Sheca.Models.Course", b =>
-                {
-                    b.HasOne("Sheca.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Sheca.Models.Event", b =>
                 {
                     b.HasOne("Sheca.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId");
 
-                    b.HasOne("Sheca.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Course");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

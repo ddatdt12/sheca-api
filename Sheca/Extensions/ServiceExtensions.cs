@@ -24,6 +24,9 @@ namespace Sheca.Extensions
 
         public static void ConfigureRepository(this IServiceCollection services) =>
             services
+            .AddScoped<IAuthService, AuthService>()
+            .AddScoped<ICourseService, CourseService>()
+            .AddScoped<IEventService, EventService>()
             .AddScoped<IAuthService,AuthService>()
             .AddScoped<IUserService,UserService>()
             .AddScoped<IMailService,MailService>()

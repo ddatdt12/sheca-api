@@ -56,7 +56,9 @@ namespace Sheca.Middlewares
                 if (userId != null)
                 {
                     // attach user to context on successful jwt validation
-                    context.Items["User"] = await userService.GetById(new Guid(userId));
+                    var user = await userService.GetById(new Guid(userId));
+                    context.Items["User"] = user;
+                    context.Items["UserId"] = userId;
                 }
             }
             await _next(context);
