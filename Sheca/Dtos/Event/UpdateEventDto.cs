@@ -1,4 +1,6 @@
-﻿namespace Sheca.Dtos
+﻿using static Sheca.Common.Enum;
+
+namespace Sheca.Dtos
 {
     public class UpdateEventDto
     {
@@ -23,5 +25,6 @@
         public DateTime? RecurringStart { get; set; }
         public int? RecurringInterval { get; set; }
         public DateTime? RecurringEnd { get; set; }
+        public ActionType? actionType{ get; set; }
     }
 }

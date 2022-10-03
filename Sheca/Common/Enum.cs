@@ -13,5 +13,13 @@ namespace Sheca.Common
             Completed,
             Cancelled,
         }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum ActionType
+        {
+            THIS,
+            THIS_AND_FOLLOWING,
+            ALL,
+        }
     }
 }
