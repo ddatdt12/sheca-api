@@ -12,17 +12,19 @@ namespace Sheca.Controllers
     {
         private readonly IAuthService _auth;
         public DataContext _context { get; set; }
+        public IMapper _mapper { get; set; }
 
-        public AuthController(IAuthService auth, DataContext context)
+        public AuthController(IAuthService auth, DataContext context, IMapper mapper)
         {
             _auth = auth;
             _context = context;
+            _mapper=mapper;
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
-            return Ok(new { message = "Login successfully.", data = user, token });
+            return Ok(new { message = "Login successfully.", data = _mapper.Map<UserDto>(user), token });
         }
 
         [HttpPost("register")]
@@ -35,23 +37,16 @@ namespace Sheca.Controllers
         [HttpPost("verify-account")]
         public async Task<IActionResult> VerifyEmailToken(TokenDTO tokenDTO)
         {
-            (User? user, string? token) = await _auth.VerifyEmailToken(tokenDTO);
-            return Ok(new { message = "Verify account successfully!", data = user, token });
+            await _auth.VerifyEmailToken(tokenDTO);
+            return Ok(new { message = "Verify account successfully!", });
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(string email)
         {
-            if (!(await _auth.FindUserByEmai(email))){ return BadRequest("User not found."); }
-            else{ return Ok("Please check the code in your email. This code consists of 4 numbers.");
-            }
-        }
-
-        [HttpPost("verify-code-repassword")]
-        public async Task<IActionResult> VerifyResetPassword(string email, string code)
-        {
-            await _auth.VerifyResetPassword(email, code);
-            return Ok(new { message = "Verify code successfully!"});
+            if (!(await _auth.FindUserByEmai(email))) { return BadRequest("User not found."); }
+            
+            return Ok("Please check the code in your email. This code consists of 4 numbers.");
         }
 
         [HttpPost("reset-password")]
@@ -59,6 +54,13 @@ namespace Sheca.Controllers
         {
             await _auth.ResetPassword(reUser);
             return Ok("Reset Password successfully.");
+        }
+
+        [HttpPost("verify-code-repassword")]
+        public IActionResult VerifyResetPassword(string email, string code)
+        {
+            _auth.VerifyResetPassword(email, code);
+            return Ok(new { message = "Verify code successfully!" });
         }
     }
 }

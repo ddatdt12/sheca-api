@@ -12,8 +12,8 @@ namespace Sheca.Services
         public Task Register(RegisterUserDto userDTO);
         public Task ForgotPassword(string emai);
         public Task<bool> FindUserByEmai(string email);
-        public Task<(User, string token)> VerifyEmailToken(TokenDTO tokenDTO);
-        public Task VerifyResetPassword(string email, string code);
+        public Task VerifyEmailToken(TokenDTO tokenDTO);
         public Task ResetPassword(RegisterUserDto UserDto);
+        void VerifyResetPassword(string email, string value);
     }
 }

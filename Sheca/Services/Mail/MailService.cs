@@ -23,7 +23,6 @@ namespace Sheca.Services.Mail
                 smtp.Host = "smtp.gmail.com";
                 smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "rekjerpennrybnpa");
                 smtp.Send(mail);
-
             });
             return code;
         }
@@ -45,7 +44,6 @@ namespace Sheca.Services.Mail
                 smtp.Host = "smtp.gmail.com";
                 smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "rekjerpennrybnpa");
                 smtp.Send(mail);
-
             });
             return code;
         }

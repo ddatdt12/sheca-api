@@ -102,7 +102,7 @@ namespace Sheca.Services
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
         }
 
-        public async Task<(User, string token)> VerifyEmailToken(TokenDTO tokenDTO)
+        public async Task VerifyEmailToken(TokenDTO tokenDTO)
         {
             Token token;
             if (!ListTokenAccount.TryGetValue(tokenDTO.Email, out token!) || tokenDTO.Code != token.Code || token.ExpiredAt < DateTime.Now)
@@ -117,7 +117,6 @@ namespace Sheca.Services
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             ListTokenAccount.Remove(tokenDTO.Email);
-            return (user, CreateToken(user));
         }
 
         public async Task ForgotPassword(string email)
@@ -131,7 +130,7 @@ namespace Sheca.Services
             ListResetPasswordAccount.Add(email, rePasswordCode);
         }
 
-        public async Task VerifyResetPassword(string email, string value)
+        public void VerifyResetPassword(string email, string value)
         {
             string code;
             if (!ListResetPasswordAccount.TryGetValue(email, out code!) || value != code)
