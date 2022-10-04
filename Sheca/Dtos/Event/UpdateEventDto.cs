@@ -19,12 +19,11 @@ namespace Sheca.Dtos
         public string ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
-        public Guid? BaseEvent { get; set; }
         public int? CourseId { get; set; }
         public CourseDto? Course { get; set; }
         public DateTime? RecurringStart { get; set; }
         public int? RecurringInterval { get; set; }
         public DateTime? RecurringEnd { get; set; }
-        public ActionType? actionType{ get; set; }
+        public TargetType? TargetType{ get; set; }
     }
 }

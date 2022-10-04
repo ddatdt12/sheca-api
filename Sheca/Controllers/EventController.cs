@@ -5,6 +5,7 @@ using Sheca.Dtos;
 using Sheca.DTOs;
 using Sheca.Models;
 using Sheca.Services;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Sheca.Controllers
 {
@@ -52,12 +53,19 @@ namespace Sheca.Controllers
         //    return Ok(new ApiResponse<EventDto>(_mapper.Map<EventDto>(@event), "Create event successfully"));
         //}
 
-        [HttpDelete("{id}")]
-        [Produces(typeof(ApiResponse<EventDto>))]
-        public async Task<IActionResult> DeleteEvent(Guid id)
+
+ 
+        [HttpPost("delete")]
+        [Produces(typeof(NoContentResult))]
+        [SwaggerOperation(
+            Summary = "Delete event",
+            Description = "Requires login",
+            OperationId = "DeleteEvent"
+        )]
+        public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventDto deleteEventDto)
         {
             var userId = HttpContext.Items["UserId"] as string;
-            await _eventService.Delete(id, userId!);
+            await _eventService.Delete(userId!, deleteEventDto);
             return NoContent();
         }
 

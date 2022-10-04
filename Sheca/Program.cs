@@ -22,6 +22,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.ConfigureSwaggerOptions();
+    c.EnableAnnotations();
 });
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 

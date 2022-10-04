@@ -19,7 +19,8 @@
         public string ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
-        public Guid? BaseEvent { get; set; }
+        public Guid? BaseEventId { get; set; }
+        public Guid? CloneEventId { get; set; }
         public int? CourseId { get; set; }
         public CourseDto? Course { get; set; }
         public Guid UserId { get; set; }

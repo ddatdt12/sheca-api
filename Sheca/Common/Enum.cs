@@ -15,7 +15,7 @@ namespace Sheca.Common
         }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public enum ActionType
+        public enum TargetType
         {
             THIS,
             THIS_AND_FOLLOWING,
