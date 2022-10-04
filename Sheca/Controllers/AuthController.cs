@@ -44,8 +44,7 @@ namespace Sheca.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(string email)
         {
-            if (!(await _auth.FindUserByEmai(email))) { return BadRequest("User not found."); }
-            
+            await _auth.ForgotPassword(email);
             return Ok("Please check the code in your email. This code consists of 4 numbers.");
         }
 

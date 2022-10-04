@@ -124,7 +124,7 @@ namespace Sheca.Services
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(email.ToLower()));
             if (user == null)
             {
-                throw new ApiException("Invalid User", 400);
+                throw new ApiException("User not found.", 400);
             }
             var rePasswordCode = await _mailService.SendResetPasswordMail(email);
             ListResetPasswordAccount.Add(email, rePasswordCode);
