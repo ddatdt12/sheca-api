@@ -51,6 +51,7 @@ namespace Sheca.Controllers
         {
             await _auth.ResetPassword(reUser);
             return Ok("Reset Password successfully.");
+
         }
     }
 }
