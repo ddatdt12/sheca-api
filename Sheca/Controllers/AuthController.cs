@@ -8,7 +8,7 @@ using Sheca.Services;
 namespace Sheca.Controllers
 {
     [ApiController]
-    [Route("auth")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
@@ -43,7 +43,7 @@ namespace Sheca.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(string email)
+        public async Task<IActionResult> ForgotPassword([FromBody]string email)
         {
             await _auth.ForgotPassword(email);
             return Ok("Please check the code in your email. This code consists of 4 numbers.");
