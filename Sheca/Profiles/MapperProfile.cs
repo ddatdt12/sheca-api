@@ -17,6 +17,7 @@ public class MapperProfile : Profile
         //Event
         CreateMap<Event, EventDto>();
         CreateMap<CreateEventDto, Event>();
+        CreateMap<UpdateEventDto, Event>().ForMember(e => e.CloneEventId, item => item.Ignore());
 
 
         CreateMap<User, UserDto>();

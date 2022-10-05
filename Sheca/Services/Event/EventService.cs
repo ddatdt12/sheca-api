@@ -195,5 +195,97 @@ namespace Sheca.Services
             }
             await _context.SaveChangesAsync();
         }
+
+        public async Task Update(UpdateEventDto upE, string userId)
+        {
+            if (!upE.CloneEventId.HasValue && !upE.Id.HasValue && !upE.BaseEventId.HasValue && (upE.BaseEventId.HasValue || !upE.BeforeStartTime.HasValue))
+            {
+                throw new ApiException("Bad request", 400);
+            }
+
+            Guid mainEventId = Guid.Empty;
+            if (upE.CloneEventId.HasValue)
+            {
+                var ev = await _context.Events.FindAsync(upE.CloneEventId);
+                if (ev == null || ev.UserId.ToString() != userId)
+                {
+                    throw new ApiException("Event not exist!", 404);
+                }
+
+                if (upE.StartTime.HasValue && !upE.BeforeStartTime.HasValue)
+                {
+                    throw new ApiException("Please provide before start time!", 400);
+                }
+
+                mainEventId = (Guid)upE.CloneEventId;
+
+                if (upE.StartTime.HasValue)
+                {
+                    ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                }
+
+                if (upE.TargetType == TargetType.THIS)
+                {
+                    var newEv = ev.Clone();
+                    _mapper.Map(upE, newEv);
+                    newEv.BaseEventId = upE.CloneEventId;
+                    await _context.AddAsync(newEv);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var newEv = ev.Clone();
+                    _mapper.Map(upE, newEv);
+                    newEv.Id = Guid.Empty;
+                    await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).UpdateFromQueryAsync(e => newEv);
+                    //await _context.Events.Where(e => ).DeleteFromQueryAsync();
+                }
+
+                return;
+            }
+            else
+            if (upE.BaseEventId.HasValue)
+            {
+                if (upE.Id.HasValue)
+                {
+                    throw new ApiException("Insufficient data", 400);
+                }
+                mainEventId = (Guid)upE.BaseEventId;
+
+                var ev = await _context.Events.FindAsync(upE.Id);
+                if (ev == null  || ev.UserId.ToString() != userId)
+                {
+                    throw new ApiException("Invalid event!", 404);
+                }
+
+                if (upE.TargetType == TargetType.THIS)
+                {
+                    _context.Events.Remove(ev);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    await _context.Events.DeleteByKeyAsync(mainEventId);
+                }
+
+                return;
+            }
+
+            var e = await _context.Events.FindAsync(upE.Id);
+            if (e == null || e.UserId.ToString() != userId)
+            {
+                throw new ApiException("Event not found", 404);
+            }
+
+            if (upE.TargetType == TargetType.THIS)
+            {
+                e.ExceptDates += (string.IsNullOrEmpty(e.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.StartTime!.Value.Ticks).TotalSeconds}";
+            }
+            else
+            {
+                _context.Events.Remove(e);
+            }
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -19,8 +19,6 @@ namespace Sheca.Controllers
             _courseService=courseService;
         }
 
-
-
         [HttpGet]
         [Produces(typeof(ApiResponse<IEnumerable<CourseDto>>))]
         public async Task<IActionResult> Get()

@@ -8,6 +8,7 @@ namespace Sheca.Services
         Task<IEnumerable<Event>> Get(string userId, FilterEvent filter);
         Task<Event> GetById(int Id);
         Task<Event> Create(CreateEventDto e, string userId);
+        Task Update(UpdateEventDto e, string userId);
         Task Delete(string userId, DeleteEventDto dE);
     }
 }
