@@ -15,6 +15,8 @@ namespace Sheca.Models
         {
         }
         public DbSet<User> Users => Set<User>();
+        public DbSet<Event> Events => Set<Event>();
+        public DbSet<Course> Courses => Set<Course>();
 
         public override int SaveChanges()
         {
