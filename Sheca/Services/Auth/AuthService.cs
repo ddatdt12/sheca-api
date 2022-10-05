@@ -1,12 +1,11 @@
 ﻿using AutoMapper;
 using CliverApi.Services.Mail;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Sheca.Dtos;
+using Sheca.Dtos.User;
 using Sheca.Error;
 using Sheca.Models;
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -19,6 +18,7 @@ namespace Sheca.Services
         private readonly IMapper _mapper;
         private readonly IMailService _mailService;
         private static IDictionary<string, Token> ListTokenAccount = new Dictionary<string, Token>();
+        private static IDictionary<string, string> ListForgotPasswordAccount = new Dictionary<string, string>();
         private static IDictionary<string, string> ListResetPasswordAccount = new Dictionary<string, string>();
         public DataContext _context { get; set; }
         public AuthService(IConfiguration configuration, DataContext context, IMapper mapper, IMailService mailService)
@@ -127,27 +127,39 @@ namespace Sheca.Services
                 throw new ApiException("User not found.", 400);
             }
             var rePasswordCode = await _mailService.SendResetPasswordMail(email);
-            ListResetPasswordAccount.Add(email, rePasswordCode);
+            ListForgotPasswordAccount.Add(email, rePasswordCode);
         }
 
-        public void VerifyResetPassword(string email, string value)
+        public string VerifyResetPassword(string email, string value)
         {
             string code;
-            if (!ListResetPasswordAccount.TryGetValue(email, out code!) || value != code)
+            if (!ListForgotPasswordAccount.TryGetValue(email, out code!) || value != code)
             {
                 throw new ApiException("Code is wrong or expired!", 400);
             }
+            string token = CreateRandomToken();
+            ListResetPasswordAccount.Add(token, email);
+            return token;
         }
 
-        public async Task ResetPassword(RegisterUserDto userDTO)
+        public async Task ResetPassword(TokenResetPasswordDto user)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == userDTO.Email.Trim().ToLower());
-            if (user == null)
+            string email;
+            if (!ListResetPasswordAccount.TryGetValue(user.Token, out email!))
             {
-                throw new ApiException("Invalid User",400);
+                throw new ApiException("Invalid Token", 400);
             }
-            _mapper.Map(userDTO, user);
+            var _user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(email.ToLower()));
+            if (_user == null)
+            {
+                throw new ApiException("User not found.", 400);
+            }
+            _user.Password = user.Password;
             await _context.SaveChangesAsync();
+        }
+        private string CreateRandomToken()
+        {
+            return new Random().Next(1000000, 9999999).ToString();
         }
     }
 }

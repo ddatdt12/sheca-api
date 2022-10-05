@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Sheca.Dtos;
+using Sheca.Dtos.User;
 using Sheca.Models;
 using Sheca.Services;
 
@@ -21,21 +22,21 @@ namespace Sheca.Controllers
             _mapper=mapper;
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDto loginUser)
+        public async Task<IActionResult> Login([FromBody] LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
             return Ok(new { message = "Login successfully.", data = _mapper.Map<UserDto>(user), token });
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterUserDto registerUser)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUser)
         {
             await _auth.Register(registerUser);
-            return Ok(new { message = "Send email verification successfully" });
+            return Ok("Send email verification successfully");
         }
 
         [HttpPost("verify-account")]
-        public async Task<IActionResult> VerifyEmailToken(TokenDTO tokenDTO)
+        public async Task<IActionResult> VerifyEmailToken([FromBody] TokenDTO tokenDTO)
         {
             await _auth.VerifyEmailToken(tokenDTO);
             return Ok(new { message = "Verify account successfully!", });
@@ -48,18 +49,18 @@ namespace Sheca.Controllers
             return Ok("Please check the code in your email. This code consists of 4 numbers.");
         }
 
+        [HttpPost("verify-code-repassword")]
+        public IActionResult VerifyResetPassword([FromBody] TokenForgotPasswordDto user)
+        {
+            string token = _auth.VerifyResetPassword(user.Email, user.Code);
+            return Ok(new {message = "Verify code successfully!", token});
+        }
+
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(RegisterUserDto reUser)
+        public async Task<IActionResult> ResetPassword(TokenResetPasswordDto reUser)
         {
             await _auth.ResetPassword(reUser);
             return Ok("Reset Password successfully.");
-        }
-
-        [HttpPost("verify-code-repassword")]
-        public IActionResult VerifyResetPassword(string email, string code)
-        {
-            _auth.VerifyResetPassword(email, code);
-            return Ok(new { message = "Verify code successfully!" });
         }
     }
 }
