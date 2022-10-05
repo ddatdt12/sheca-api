@@ -62,5 +62,12 @@ namespace Sheca.Controllers
             await _auth.ResetPassword(reUser);
             return Ok("Reset Password successfully.");
         }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePassword chUser)
+        {
+            await _auth.ChangePassword(chUser);
+            return Ok("Reset Password successfully.");
+        }
     }
 }

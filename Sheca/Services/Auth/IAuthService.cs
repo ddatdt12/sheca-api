@@ -16,5 +16,6 @@ namespace Sheca.Services
         public Task VerifyEmailToken(TokenDTO tokenDTO);
         public Task ResetPassword(TokenResetPasswordDto UserDto);
         public string VerifyResetPassword(string email, string value);
+        public Task ChangePassword(ChangePassword changePassword);
     }
 }

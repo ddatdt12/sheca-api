@@ -157,6 +157,21 @@ namespace Sheca.Services
             _user.Password = user.Password;
             await _context.SaveChangesAsync();
         }
+
+        public async Task ChangePassword(ChangePassword chUser)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(chUser.Email.ToLower()));
+            if (user == null)
+            {
+                throw new ApiException("User not found.", 400);
+            } else if (user.Password != chUser.Password)
+            {
+                throw new ApiException("Wrong current password!", 400);
+            }
+            user.Password = chUser.Password;
+            await _context.SaveChangesAsync();
+        }
+
         private string CreateRandomToken()
         {
             return new Random().Next(1000000, 9999999).ToString();
