@@ -53,5 +53,5 @@ jobs:
         with:
           app-name: 'sheca-api'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0AE598E364794023A4A7B3046EFE6EE6 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6F7061D1211F467AA99C3C2961E0AFE2 }}
           package: .

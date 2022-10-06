@@ -1,7 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Sheca.Dtos;
-using Sheca.Error;
+using Sheca.Dtos.User;
 using Sheca.Models;
 using Sheca.Services;
 
@@ -42,35 +42,32 @@ namespace Sheca.Controllers
             return Ok(new { message = "Verify account successfully!", });
         }
 
-        public AuthController(ILogger<AuthController> logger, IAuthService authService)
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody]string email)
         {
-            _logger = logger;
-            _authService = authService;
-        }
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(UserDTO loginUser)
-        {
-            (User? user, string? token) = await _auth.Login(loginUser);
-            return Ok(new { message = "Login successfully.", data = user, token });
+            await _auth.ForgotPassword(email);
+            return Ok("Please check the code in your email. This code consists of 4 numbers.");
         }
 
-        [HttpGet]
-        public IActionResult Get()
+        [HttpPost("verify-code-repassword")]
+        public IActionResult VerifyResetPassword([FromBody] TokenForgotPasswordDto user)
         {
-            return Ok();
+            string token = _auth.VerifyResetPassword(user.Email, user.Code);
+            return Ok(new {message = "Verify code successfully!", token});
         }
 
-        [HttpPost("login")]
-        public IActionResult Login()
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(TokenResetPasswordDto reUser)
         {
-            _authService.Login("", "");
-            return Ok();
+            await _auth.ResetPassword(reUser);
+            return Ok("Reset Password successfully.");
         }
 
-        [HttpPost("register")]
-        public IActionResult Register()
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePassword chUser)
         {
-            return Ok();
+            await _auth.ChangePassword(chUser);
+            return Ok("Reset Password successfully.");
         }
     }
 }

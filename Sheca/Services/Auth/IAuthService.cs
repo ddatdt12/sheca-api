@@ -1,4 +1,6 @@
-﻿using Sheca.Dtos;
+﻿using Microsoft.AspNetCore.Mvc;
+using Sheca.Dtos;
+using Sheca.Dtos.User;
 using Sheca.Models;
 
 namespace Sheca.Services
@@ -8,8 +10,12 @@ namespace Sheca.Services
         string CreateToken(User user);
         string ValidateToken(string token);
         public Task<(User, string token)> Login(LoginUserDto UserDto);
-        public Task<(User, string token)> Register(RegisterUserDto UserDto);
+        public Task Register(RegisterUserDto userDTO);
+        public Task ForgotPassword(string emai);
         public Task<bool> FindUserByEmai(string email);
-        public Task ResetPassword(RegisterUserDto UserDto);
+        public Task VerifyEmailToken(TokenDTO tokenDTO);
+        public Task ResetPassword(TokenResetPasswordDto UserDto);
+        public string VerifyResetPassword(string email, string value);
+        public Task ChangePassword(ChangePassword changePassword);
     }
 }
