@@ -219,13 +219,13 @@ namespace Sheca.Services
 
                 mainEventId = (Guid)upE.CloneEventId;
 
-                if (upE.StartTime.HasValue)
-                {
-                    ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
-                }
 
                 if (upE.TargetType == TargetType.THIS)
                 {
+                    if (upE.StartTime.HasValue)
+                    {
+                        ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                    }
                     var newEv = ev.Clone();
                     _mapper.Map(upE, newEv);
                     newEv.BaseEventId = upE.CloneEventId;
@@ -234,13 +234,20 @@ namespace Sheca.Services
                 }
                 else
                 {
-                    var newEv = ev.Clone();
-                    _mapper.Map(upE, newEv);
-                    newEv.Id = Guid.Empty;
-                    await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).UpdateFromQueryAsync(e => newEv);
-                    //await _context.Events.Where(e => ).DeleteFromQueryAsync();
-                }
+                    if (upE.StartTime?.Date != upE.BeforeStartTime?.Date)
+                    {
 
+                    }
+                    else
+                    {
+                        var eve = await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).ToListAsync();
+                        eve.ForEach(e =>
+                        {
+                            _mapper.Map(upE, e);
+                        });
+                        await _context.BulkSaveChangesAsync();
+                    }
+                }
                 return;
             }
             else
@@ -267,7 +274,6 @@ namespace Sheca.Services
                 {
                     await _context.Events.DeleteByKeyAsync(mainEventId);
                 }
-
                 return;
             }
 
