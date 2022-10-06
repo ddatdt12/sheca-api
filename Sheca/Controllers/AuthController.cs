@@ -19,40 +19,58 @@ namespace Sheca.Controllers
         {
             _auth = auth;
             _context = context;
-            _mapper = mapper;
+            _mapper=mapper;
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDto loginUser)
+        public async Task<IActionResult> Login([FromBody] LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
             return Ok(new { message = "Login successfully.", data = _mapper.Map<UserDto>(user), token });
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterUserDto registerUser)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUser)
         {
-            (User user, string token) = await _auth.Register(registerUser);
-            return Ok(new { message = "Register successfully.", token });
+            await _auth.Register(registerUser);
+            return Ok("Send email verification successfully");
         }
 
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(string email)
+        [HttpPost("verify-account")]
+        public async Task<IActionResult> VerifyEmailToken([FromBody] TokenDTO tokenDTO)
         {
-            if (!(await _auth.FindUserByEmai(email)))
-            {
-                return BadRequest("User not found.");
-            }
-            else
-            {
-                return Ok("You may now reset your password.");
-            }
+            await _auth.VerifyEmailToken(tokenDTO);
+            return Ok(new { message = "Verify account successfully!", });
         }
 
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(RegisterUserDto reUser)
+        public AuthController(ILogger<AuthController> logger, IAuthService authService)
         {
-            await _auth.ResetPassword(reUser);
-            return Ok("Reset Password successfully.");
+            _logger = logger;
+            _authService = authService;
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(UserDTO loginUser)
+        {
+            (User? user, string? token) = await _auth.Login(loginUser);
+            return Ok(new { message = "Login successfully.", data = user, token });
+        }
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok();
+        }
+
+        [HttpPost("login")]
+        public IActionResult Login()
+        {
+            _authService.Login("", "");
+            return Ok();
+        }
+
+        [HttpPost("register")]
+        public IActionResult Register()
+        {
+            return Ok();
         }
     }
 }

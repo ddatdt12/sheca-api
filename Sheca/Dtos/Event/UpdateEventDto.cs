@@ -11,7 +11,6 @@ namespace Sheca.Dtos
         public string? ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
-        public int? CourseId { get; set; }
         public DateTime? RecurringStart { get; set; }
         public int? RecurringInterval { get; set; }
         public DateTime? RecurringEnd { get; set; }

@@ -40,7 +40,7 @@ namespace Sheca.Services
             {
                 query = query.Where(e =>
                 (e.StartTime.Date >= fromDate && e.StartTime.Date <= endDate)
-                || (e.RecurringInterval != null && e.RecurringInterval != 0  && e.StartTime.Date < fromDate && duration / e.RecurringInterval >= 1)
+                || (e.RecurringInterval != null && e.RecurringInterval != 0 && e.StartTime.Date < fromDate && duration / e.RecurringInterval >= 1)
                 );
             }
             else
@@ -161,7 +161,7 @@ namespace Sheca.Services
                 mainEventId = (Guid)dE.BaseEventId;
 
                 var ev = await _context.Events.FindAsync(dE.Id);
-                if (ev == null  || ev.UserId.ToString() != userId)
+                if (ev == null || ev.UserId.ToString() != userId)
                 {
                     throw new ApiException("Invalid event!", 404);
                 }
@@ -203,7 +203,6 @@ namespace Sheca.Services
                 throw new ApiException("Bad request", 400);
             }
 
-            Guid mainEventId = Guid.Empty;
             if (upE.CloneEventId.HasValue)
             {
                 var ev = await _context.Events.FindAsync(upE.CloneEventId);
@@ -217,8 +216,6 @@ namespace Sheca.Services
                     throw new ApiException("Please provide before start time!", 400);
                 }
 
-                mainEventId = (Guid)upE.CloneEventId;
-
                 if (upE.StartTime.HasValue)
                 {
                     ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
@@ -226,6 +223,11 @@ namespace Sheca.Services
 
                 if (upE.TargetType == TargetType.THIS)
                 {
+                    if (upE.StartTime.HasValue && upE.StartTime != ev.StartTime && upE.EndTime != ev.EndTime)
+                    {
+                        ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                    }
+
                     var newEv = ev.Clone();
                     _mapper.Map(upE, newEv);
                     newEv.BaseEventId = upE.CloneEventId;
@@ -234,40 +236,44 @@ namespace Sheca.Services
                 }
                 else
                 {
-                    var newEv = ev.Clone();
-                    _mapper.Map(upE, newEv);
-                    newEv.Id = Guid.Empty;
-                    await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).UpdateFromQueryAsync(e => newEv);
+                    var events = await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).ToListAsync();
+
+                    foreach (var @event in events)
+                    {
+                        _mapper.Map(upE, @event);
+                    }
+
+                    _context.BulkUpdate(events);
                     //await _context.Events.Where(e => ).DeleteFromQueryAsync();
                 }
 
                 return;
             }
-            else
-            if (upE.BaseEventId.HasValue)
+            else if (upE.BaseEventId.HasValue)
             {
                 if (upE.Id.HasValue)
                 {
                     throw new ApiException("Insufficient data", 400);
                 }
-                mainEventId = (Guid)upE.BaseEventId;
 
                 var ev = await _context.Events.FindAsync(upE.Id);
-                if (ev == null  || ev.UserId.ToString() != userId)
+                if (ev == null || ev.UserId.ToString() != userId)
                 {
                     throw new ApiException("Invalid event!", 404);
                 }
 
                 if (upE.TargetType == TargetType.THIS)
                 {
-                    _context.Events.Remove(ev);
+                    _mapper.Map(upE, ev);
                     await _context.SaveChangesAsync();
                 }
                 else
                 {
-                    await _context.Events.DeleteByKeyAsync(mainEventId);
+                    var newEv = new Event();
+                    _mapper.Map(upE, newEv);
+                    newEv.Id = Guid.Empty;
+                    await _context.Events.Where(e => e.Id == upE.BaseEventId || e.BaseEventId == upE.BaseEventId).UpdateFromQueryAsync(e => newEv);
                 }
-
                 return;
             }
 

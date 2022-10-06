@@ -53,13 +53,11 @@ namespace Sheca.Controllers
             return NoContent();
         }
 
-
-
         [HttpPost("delete")]
         [Produces(typeof(NoContentResult))]
         [SwaggerOperation(
             Summary = "Delete event",
-            Description = "Requires login",
+            Description = @"Requires login;\n , TargetType { THIS, THIS_AND_FOLLOWING, ALL}",
             OperationId = "DeleteEvent"
         )]
         public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventDto deleteEventDto)
