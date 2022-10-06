@@ -243,10 +243,8 @@ namespace Sheca.Services
                         _mapper.Map(upE, @event);
                     }
 
-                    _context.BulkUpdate(events);
-                    //await _context.Events.Where(e => ).DeleteFromQueryAsync();
+                    await _context.BulkSaveChangesAsync();
                 }
-
                 return;
             }
             else if (upE.BaseEventId.HasValue)
