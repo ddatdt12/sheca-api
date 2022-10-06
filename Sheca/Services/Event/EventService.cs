@@ -216,11 +216,6 @@ namespace Sheca.Services
                     throw new ApiException("Please provide before start time!", 400);
                 }
 
-                if (upE.StartTime.HasValue)
-                {
-                    ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
-                }
-
                 if (upE.TargetType == TargetType.THIS)
                 {
                     if (upE.StartTime.HasValue && upE.StartTime != ev.StartTime && upE.EndTime != ev.EndTime)
@@ -236,14 +231,21 @@ namespace Sheca.Services
                 }
                 else
                 {
-                    var events = await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).ToListAsync();
-
-                    foreach (var @event in events)
+                    if (upE.StartTime?.Date == upE.BeforeStartTime?.Date)
                     {
-                        _mapper.Map(upE, @event);
-                    }
+                        var events = await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).ToListAsync();
 
-                    await _context.BulkSaveChangesAsync();
+                        foreach (var @event in events)
+                        {
+                            _mapper.Map(upE, @event);
+                        }
+
+                        await _context.BulkSaveChangesAsync();
+                    }
+                    else
+                    {
+                        
+                    }
                 }
                 return;
             }
