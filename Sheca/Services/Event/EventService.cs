@@ -202,15 +202,18 @@ namespace Sheca.Services
             {
                 throw new ApiException("Bad request", 400);
             }
+            var eventId = upE.CloneEventId ?? upE.Id;
 
-            if (upE.CloneEventId.HasValue)
+            string typeId = upE.CloneEventId.HasValue ? "CloneId" : (upE.BaseEventId.HasValue ? "BaseId" : "Main");
+
+            var currentEvent = await _context.Events.FindAsync(eventId);
+            if (currentEvent == null || currentEvent.UserId.ToString() != userId)
             {
-                var ev = await _context.Events.FindAsync(upE.CloneEventId);
-                if (ev == null || ev.UserId.ToString() != userId)
-                {
-                    throw new ApiException("Event not exist!", 404);
-                }
+                throw new ApiException("Event not exist!", 404);
+            }
 
+            if (typeId != "Main")
+            {
                 if (upE.StartTime.HasValue && !upE.BeforeStartTime.HasValue)
                 {
                     throw new ApiException("Please provide before start time!", 400);
@@ -223,24 +226,38 @@ namespace Sheca.Services
                 }
                 if (upE.TargetType == TargetType.THIS)
                 {
-                    if (upE.StartTime.HasValue && upE.StartTime != ev.StartTime && upE.EndTime != ev.EndTime)
+                    if (typeId == "CloneId")
                     {
-                        ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                        if (upE.StartTime.HasValue && upE.StartTime != currentEvent.StartTime && upE.EndTime != currentEvent.EndTime)
+                        {
+                            currentEvent.ExceptDates += (string.IsNullOrEmpty(currentEvent.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                        }
+
+                        var newEv = currentEvent.Clone();
+                        newEv.Id = Guid.NewGuid();
+                        _mapper.Map(upE, newEv);
+                        newEv.BaseEventId = eventId;
+                        await _context.AddAsync(newEv);
+                    }
+                    else
+                    {
+                        _mapper.Map(upE, currentEvent);
                     }
 
-                    var newEv = ev.Clone();
-                    _mapper.Map(upE, newEv);
-                    newEv.BaseEventId = upE.CloneEventId;
-                    await _context.AddAsync(newEv);
                     await _context.SaveChangesAsync();
                 }
                 else //  TargetType.THIS_AND_FOLLOWING
                 {
+                    if (!upE.BeforeStartTime.HasValue)
+                    {
+                        throw new ApiException("Please provide start time of this event", 400);
+                    }
+
                     if (!upE.StartTime.HasValue || upE.StartTime?.Date == upE.BeforeStartTime?.Date)
                     {
-                        var events = await _context.Events.Where(e => e.BaseEventId == upE.CloneEventId).ToListAsync();
+                        var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
 
-                        _mapper.Map(upE, ev);
+                        _mapper.Map(upE, currentEvent);
                         foreach (var @event in events)
                         {
                             _mapper.Map(upE, @event);
@@ -250,11 +267,11 @@ namespace Sheca.Services
                     }
                     else
                     {
-                        if (upE.BeforeStartTime == ev.StartTime)
+                        if (upE.BeforeStartTime == currentEvent.StartTime)
                         {
-                            var events = await _context.Events.Where(e => e.BaseEventId == upE.CloneEventId).ToListAsync();
+                            var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
 
-                            _mapper.Map(upE, ev);
+                            _mapper.Map(upE, currentEvent);
                             foreach (var @event in events)
                             {
                                 _mapper.Map(upE, @event);
@@ -264,36 +281,17 @@ namespace Sheca.Services
                         }
                         else
                         {
-                            
+                            if (currentEvent.RecurringStart.HasValue)
+                            {
+                                currentEvent.RecurringEnd = upE.BeforeStartTime!.Value.AddSeconds(-1 * currentEvent?.RecurringInterval ?? 0);
+
+                                var newEvent = currentEvent!.Clone();
+                                _mapper.Map(upE, newEvent);
+                                await _context.Events.AddAsync(newEvent);
+                                await _context.BulkSaveChangesAsync();
+                            }
                         }
                     }
-                }
-                return;
-            }
-            else if (upE.BaseEventId.HasValue)
-            {
-                if (upE.Id.HasValue)
-                {
-                    throw new ApiException("Insufficient data", 400);
-                }
-
-                var ev = await _context.Events.FindAsync(upE.Id);
-                if (ev == null || ev.UserId.ToString() != userId)
-                {
-                    throw new ApiException("Invalid event!", 404);
-                }
-
-                if (upE.TargetType == TargetType.THIS)
-                {
-                    _mapper.Map(upE, ev);
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    var newEv = new Event();
-                    _mapper.Map(upE, newEv);
-                    newEv.Id = Guid.Empty;
-                    await _context.Events.Where(e => e.Id == upE.BaseEventId || e.BaseEventId == upE.BaseEventId).UpdateFromQueryAsync(e => newEv);
                 }
                 return;
             }

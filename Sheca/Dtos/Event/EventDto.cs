@@ -26,7 +26,7 @@
         public Guid UserId { get; set; }
         public UserDto? User { get; set; }
         public DateTime? RecurringStart { get; set; }
-        public int? RecurringInterval { get; set; }
+        public RecurringType? RecurringType { get; set; }
         public DateTime? RecurringEnd { get; set; }
     }
 }

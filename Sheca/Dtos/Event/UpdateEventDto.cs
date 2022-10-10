@@ -12,9 +12,8 @@ namespace Sheca.Dtos
         //minutes
         public int? NotiBeforeTime { get; set; }
         public DateTime? RecurringStart { get; set; }
-        public int? RecurringInterval { get; set; }
+        public RecurringType? RecurringType { get; set; }
         public DateTime? RecurringEnd { get; set; }
-
         public Guid? Id { get; set; }
         public Guid? BaseEventId { get; set; }
         public Guid? CloneEventId { get; set; }

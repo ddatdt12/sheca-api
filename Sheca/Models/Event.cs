@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.ComponentModel.DataAnnotations.Schema;
+using static Sheca.Common.Enum;
 
 namespace Sheca.Models
 {
@@ -34,8 +35,11 @@ namespace Sheca.Models
         public Guid UserId { get; set; }
         public User? User{ get; set; }
         public Course? Course { get; set; }
+
         public DateTime? RecurringStart { get; set; }
+        public RecurringUnit? RecurringUnit { get; set; }
         public int? RecurringInterval { get; set; }
+        public string? RecurringDetails{ get; set; }
         public DateTime? RecurringEnd { get; set; }
         public string ExceptDates { get; set; }
 

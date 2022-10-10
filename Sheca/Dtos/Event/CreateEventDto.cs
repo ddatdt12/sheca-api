@@ -15,7 +15,7 @@
         public string ColorCode { get; set; }
         public int? NotiBeforeTime { get; set; }     //minutes
         public DateTime? RecurringStart { get; set; }
-        public int? RecurringInterval { get; set; }
+        public RecurringType? RecurringType { get; set; }
         public DateTime? RecurringEnd { get; set; }
     }
 }

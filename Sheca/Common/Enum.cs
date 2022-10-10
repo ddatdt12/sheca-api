@@ -21,5 +21,12 @@ namespace Sheca.Common
             THIS_AND_FOLLOWING,
             ALL,
         }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum RecurringUnit
+        {
+            DAY = 86400,
+            WEEK = 604800,
+        }
     }
 }
