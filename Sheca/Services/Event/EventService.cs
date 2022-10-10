@@ -65,8 +65,8 @@ namespace Sheca.Services
                     var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
                     if (e.StartTime.Date >= fromDate?.Date)
                     {
-                        sameEvents.Add(e);
-                        for (int i = 1; i <= maxTimes; i++)
+                        //sameEvents.Add(e);
+                        for (int i = 0; i <= maxTimes; i++)
                         {
                             if (e.StartTime.AddSeconds(i * (int)e.RecurringInterval) > e.RecurringEnd)
                             {
@@ -216,6 +216,11 @@ namespace Sheca.Services
                     throw new ApiException("Please provide before start time!", 400);
                 }
 
+
+                if (upE.TargetType == TargetType.ALL)
+                {
+                    throw new ApiException("This target type is not supported", 400);
+                }
                 if (upE.TargetType == TargetType.THIS)
                 {
                     if (upE.StartTime.HasValue && upE.StartTime != ev.StartTime && upE.EndTime != ev.EndTime)
@@ -229,12 +234,13 @@ namespace Sheca.Services
                     await _context.AddAsync(newEv);
                     await _context.SaveChangesAsync();
                 }
-                else
+                else //  TargetType.THIS_AND_FOLLOWING
                 {
-                    if (upE.StartTime?.Date == upE.BeforeStartTime?.Date)
+                    if (!upE.StartTime.HasValue || upE.StartTime?.Date == upE.BeforeStartTime?.Date)
                     {
-                        var events = await _context.Events.Where(e => e.Id == upE.CloneEventId || e.BaseEventId == upE.CloneEventId).ToListAsync();
+                        var events = await _context.Events.Where(e => e.BaseEventId == upE.CloneEventId).ToListAsync();
 
+                        _mapper.Map(upE, ev);
                         foreach (var @event in events)
                         {
                             _mapper.Map(upE, @event);
@@ -244,7 +250,22 @@ namespace Sheca.Services
                     }
                     else
                     {
-                        
+                        if (upE.BeforeStartTime == ev.StartTime)
+                        {
+                            var events = await _context.Events.Where(e => e.BaseEventId == upE.CloneEventId).ToListAsync();
+
+                            _mapper.Map(upE, ev);
+                            foreach (var @event in events)
+                            {
+                                _mapper.Map(upE, @event);
+                            }
+
+                            await _context.BulkSaveChangesAsync();
+                        }
+                        else
+                        {
+                            
+                        }
                     }
                 }
                 return;
