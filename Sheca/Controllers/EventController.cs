@@ -36,6 +36,7 @@ namespace Sheca.Controllers
         }
 
         [HttpPost]
+        [ValidateModel]
         [Produces(typeof(ApiResponse<EventDto>))]
         public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto newE)
         {

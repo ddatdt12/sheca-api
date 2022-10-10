@@ -1,4 +1,5 @@
-﻿using static Sheca.Common.Enum;
+﻿using Sheca.Attributes;
+using static Sheca.Common.Enum;
 
 namespace Sheca.Dtos
 {
@@ -11,8 +12,12 @@ namespace Sheca.Dtos
         public string? ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
+        [SameExist("RecurringInterval", ErrorMessage = "RecurringStart and RecurringType must exist in same time")]
         public DateTime? RecurringStart { get; set; }
-        public RecurringType? RecurringType { get; set; }
+        [SameExist("RecurringUnit", ErrorMessage = "RecurringUnit and RecurringInterval must exist in same time")]
+        public int? RecurringInterval { get; set; }
+        public RecurringUnit? RecurringUnit { get; set; }
+        public string? RecurringDetails { get; set; }
         public DateTime? RecurringEnd { get; set; }
         public Guid? Id { get; set; }
         public Guid? BaseEventId { get; set; }

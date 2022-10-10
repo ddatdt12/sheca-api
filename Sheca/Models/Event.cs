@@ -37,8 +37,8 @@ namespace Sheca.Models
         public Course? Course { get; set; }
 
         public DateTime? RecurringStart { get; set; }
-        public RecurringUnit? RecurringUnit { get; set; }
         public int? RecurringInterval { get; set; }
+        public RecurringUnit? RecurringUnit { get; set; }
         public string? RecurringDetails{ get; set; }
         public DateTime? RecurringEnd { get; set; }
         public string ExceptDates { get; set; }
