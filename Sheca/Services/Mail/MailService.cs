@@ -13,7 +13,7 @@ namespace Sheca.Services.Mail
             {
                 MailMessage mail = new MailMessage();
                 mail.To.Add(email);
-                mail.From = new MailAddress("Shecaapp@gmail.com");
+                mail.From = new MailAddress("gahulla2002@gmail.com");
                 mail.Subject = "ShecaApp - Verification mail";
                 mail.Body = "This is your verification code: " + code;
                 SmtpClient smtp = new SmtpClient();
@@ -21,7 +21,7 @@ namespace Sheca.Services.Mail
                 smtp.EnableSsl = true;
                 smtp.UseDefaultCredentials = false;
                 smtp.Host = "smtp.gmail.com";
-                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "lfrtpskqnkxqczhl");
+                smtp.Credentials = new NetworkCredential("gahulla2002@gmail.com", "tiyjilkneqakfxkh");
                 smtp.Send(mail);
             });
             return code;
@@ -34,7 +34,7 @@ namespace Sheca.Services.Mail
             {
                 MailMessage mail = new MailMessage();
                 mail.To.Add(email);
-                mail.From = new MailAddress("Shecaapp@gmail.com");
+                mail.From = new MailAddress("gahulla2002@gmail.com");
                 mail.Subject = "ShecaApp - Account recovery code mail";
                 mail.Body = "Enter the following password reset code: " + code;
                 SmtpClient smtp = new SmtpClient();
@@ -42,7 +42,7 @@ namespace Sheca.Services.Mail
                 smtp.EnableSsl = true;
                 smtp.UseDefaultCredentials = false;
                 smtp.Host = "smtp.gmail.com";
-                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "lfrtpskqnkxqczhl");
+                smtp.Credentials = new NetworkCredential("gahulla2002@gmail.com", "tiyjilkneqakfxkh");
                 smtp.Send(mail);
             });
             return code;

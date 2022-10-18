@@ -20,7 +20,7 @@ namespace Sheca.Controllers
         {
             _auth = auth;
             _context = context;
-            _mapper=mapper;
+            _mapper = mapper;
         }
         [HttpPost("login")]
         [Produces(typeof(ApiResponse<LoginUserDto>))]
@@ -35,14 +35,15 @@ namespace Sheca.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUser)
         {
             await _auth.Register(registerUser);
-            return Ok(new ApiResponse<string>(string.Empty, "Send email verification successfully"));
+            return Ok(new ApiResponse<string>(String.Empty, "Send email verification successfully"));
         }
 
         [HttpPost("verify-account")]
         public async Task<IActionResult> VerifyEmailToken([FromBody] TokenDTO tokenDTO)
         {
-            await _auth.VerifyEmailToken(tokenDTO);
-            return Ok(new ApiResponse<string>(string.Empty, "Verify account successfully!"));
+            (User user, string token) = await _auth.VerifyEmailToken(tokenDTO);
+            var userDTO = _mapper.Map<UserDto>(user); userDTO.token = token;
+            return Ok(new ApiResponse<UserDto>(userDTO, "Verify account successfully!"));
         }
 
         [HttpPost("forgot-password")]
@@ -62,8 +63,9 @@ namespace Sheca.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(TokenResetPasswordDto reUser)
         {
-            await _auth.ResetPassword(reUser);
-            return Ok(new ApiResponse<string>(string.Empty, "Reset Password successfully."));
+            (User user, string token) = await _auth.ResetPassword(reUser);
+            var userDTO = _mapper.Map<UserDto>(user); userDTO.token = token;
+            return Ok(new ApiResponse<UserDto>(userDTO, "Reset Password successfully."));
         }
 
         [HttpPost("change-password")]
