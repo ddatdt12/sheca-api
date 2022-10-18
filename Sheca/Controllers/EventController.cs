@@ -45,14 +45,14 @@ namespace Sheca.Controllers
             return Ok(new ApiResponse<EventDto>(_mapper.Map<EventDto>(@event), "Create event successfully"));
         }
 
-        [HttpPost("update")]
-        [Produces(typeof(ApiResponse<EventDto>))]
-        public async Task<IActionResult> UpdateEvent([FromBody] UpdateEventDto newE)
-        {
-            var userId = HttpContext.Items["UserId"] as string;
-            await _eventService.Update(newE, userId!);
-            return NoContent();
-        }
+        //[HttpPost("update")]
+        //[Produces(typeof(ApiResponse<EventDto>))]
+        //public async Task<IActionResult> UpdateEvent([FromBody] UpdateEventDto newE)
+        //{
+        //    var userId = HttpContext.Items["UserId"] as string;
+        //    await _eventService.Update(newE, userId!);
+        //    return NoContent();
+        //}
 
         [HttpPost("delete")]
         [Produces(typeof(NoContentResult))]

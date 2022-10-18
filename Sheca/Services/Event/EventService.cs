@@ -21,6 +21,12 @@ namespace Sheca.Services
         async Task<Event> IEventService.Create(CreateEventDto e, string userId)
         {
             Event @event = _mapper.Map<Event>(e);
+            
+            if (@event.RecurringInterval.HasValue)
+            {
+                @event.RecurringStart = @event.StartTime;
+            }
+
             @event.UserId = new Guid(userId);
             _context.Events.Add(@event);
             await _context.SaveChangesAsync();
@@ -79,7 +85,6 @@ namespace Sheca.Services
 
                     for (int i = 0; consideredDate <= e.RecurringEnd && consideredDate <= endDate; i++)
                     {
-                        //var consideredDate = e.StartTime;
                         var timeSpan = e.EndTime - e.StartTime;
                         var duplicateE = e.Clone();
                         duplicateE.Id = Guid.NewGuid();
@@ -114,7 +119,7 @@ namespace Sheca.Services
                     current = current.AddDays(value);
                     break;
                 case RecurringUnit.WEEK:
-                    current = current.AddDays(7* value);
+                    current = current.AddDays(7 * value);
                     break;
                 //case RecurringUnit.MONTH:
                 //    current.AddMonths(1);

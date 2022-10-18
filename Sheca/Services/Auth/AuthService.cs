@@ -73,7 +73,7 @@ namespace Sheca.Services
             }
         }
 
-        public async Task<(User, string token)> Login(LoginUserDto UserDto)
+        public async Task<(User, string)> Login(LoginUserDto UserDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(UserDto.Email.ToLower()));
             if (user == null)
@@ -104,7 +104,7 @@ namespace Sheca.Services
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.Trim().ToLower() == email.Trim().ToLower()) == null ? false : true;
         }
 
-        public async Task VerifyEmailToken(TokenDTO tokenDTO)
+        public async Task<(User, string)> VerifyEmailToken(TokenDTO tokenDTO)
         {
             Token token;
             if (!ListTokenAccount.TryGetValue(tokenDTO.Email, out token!) || tokenDTO.Code != token.Code || token.ExpiredAt < DateTime.Now)
@@ -119,6 +119,7 @@ namespace Sheca.Services
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             ListTokenAccount.Remove(tokenDTO.Email);
+            return(user,CreateToken(user));
         }
 
         public async Task ForgotPassword(string email)
@@ -144,7 +145,7 @@ namespace Sheca.Services
             return token;
         }
 
-        public async Task ResetPassword(TokenResetPasswordDto user)
+        public async Task<(User, string)> ResetPassword(TokenResetPasswordDto user)
         {
             string email;
             if (!ListResetPasswordAccount.TryGetValue(user.Token, out email!))
@@ -158,6 +159,7 @@ namespace Sheca.Services
             }
             _user.Password = user.Password;
             await _context.SaveChangesAsync();
+            return (_user, CreateToken(_user));
         }
 
         public async Task ChangePassword(ChangePassword chUser)

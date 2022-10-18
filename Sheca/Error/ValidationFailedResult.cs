@@ -39,7 +39,7 @@ namespace Sheca.Error
 
         public ValidationResultModel(ModelStateDictionary modelState)
         {
-            Message = "Validation Failed";
+                Message = "Validation Failed";
             Errors = modelState.Keys
                     .SelectMany(key => modelState[key].Errors.Select(x => new ValidationError(key, 0, x.ErrorMessage)))
                     .ToList();

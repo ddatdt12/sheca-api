@@ -34,7 +34,7 @@ namespace Sheca.Dtos
         [SameExist("RecurringUnit", ErrorMessage = "RecurringUnit and RecurringInterval must exist in same time")]
         public int? RecurringInterval { get; set; }
         public RecurringUnit? RecurringUnit { get; set; }
-        public string? RecurringDetails { get; set; }
+        public List<DayOfWeek>? RecurringDetails { get; set; }
         public DateTime? RecurringEnd { get; set; }
     }
 }

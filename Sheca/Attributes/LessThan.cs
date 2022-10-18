@@ -25,13 +25,13 @@ namespace Sheca.Attributes
             if (property == null)
                 throw new ArgumentException("Property with this name not found");
 
-            if (property.GetType() != value?.GetType())
-                throw new ArgumentException("Type not match");
+            //if (property.GetType() != value?.GetType())
+            //    throw new ArgumentException("Type not match");
 
             dynamic? comparisonValue = property.GetValue(validationContext.ObjectInstance);
-            if (comparisonValue == null) { return ValidationResult.Success; }
+            if (_acceptNull && comparisonValue == null) { return ValidationResult.Success; }
 
-            if (_acceptNull && value < comparisonValue)
+            if ((DateTime)value < comparisonValue)
             {
                 return ValidationResult.Success;
             }
