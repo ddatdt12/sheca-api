@@ -12,7 +12,6 @@ namespace Sheca.Dtos
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
             ColorCode = "#1a73e8";
-            RecurringType = new RecurringType();
         }
 
         public Guid Id { get; set; }

@@ -25,8 +25,9 @@ namespace Sheca.Common
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public enum RecurringUnit
         {
-            DAY = 86400,
-            WEEK = 604800,
+            DAY = 1,
+            WEEK = 2,
+            //MONTH = 3,
         }
     }
 }

@@ -35,12 +35,19 @@ namespace Sheca.Services
             DateTime? fromDate = filter?.FromDate?.Date ?? DateTime.MinValue;
             DateTime? endDate = filter?.ToDate?.Date.AddDays(1) ?? DateTime.MaxValue;
             var duration = (endDate - fromDate)?.TotalSeconds ?? 0;
+            var totalDays = (endDate - fromDate)?.TotalSeconds ?? 0;
+            var totalWeeks = (endDate - fromDate)?.TotalDays / 7 ?? 0;
+            //var totalMonths = (endDate - fromDate)?.Total ?? 0;
 
             if (fromDate.HasValue && endDate.HasValue)
             {
                 query = query.Where(e =>
                 (e.StartTime.Date >= fromDate && e.StartTime.Date <= endDate)
-                || (e.RecurringInterval != null && e.RecurringInterval != 0 && e.StartTime.Date < fromDate && duration / e.RecurringInterval >= 1)
+                || (e.RecurringInterval != null && e.RecurringInterval != 0 && e.StartTime.Date < fromDate
+                &&
+               (e.RecurringUnit == RecurringUnit.DAY && totalDays / e.RecurringInterval >= 1) ||
+                (e.RecurringUnit == RecurringUnit.WEEK && totalWeeks / e.RecurringInterval >= 1)
+                )
                 );
             }
             else
@@ -60,50 +67,32 @@ namespace Sheca.Services
             {
                 if (e.RecurringInterval.HasValue && duration != 0 && fromDate.HasValue && endDate.HasValue)
                 {
-                    var maxTimes = duration / e.RecurringInterval;
                     var sameEvents = new List<Event>();
                     var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
-                    if (e.StartTime.Date >= fromDate?.Date)
-                    {
-                        //sameEvents.Add(e);
-                        for (int i = 0; i <= maxTimes; i++)
-                        {
-                            if (e.StartTime.AddSeconds(i * (int)e.RecurringInterval) > e.RecurringEnd)
-                            {
-                                break;
-                            }
-                            var duplicateE = e.Clone();
-                            duplicateE.Id = Guid.NewGuid();
-                            duplicateE.StartTime = e.StartTime.AddSeconds(i * (int)e.RecurringInterval);
-                            duplicateE.EndTime = e.EndTime.AddSeconds(i * (int)e.RecurringInterval);
-                            duplicateE.CloneEventId = e.Id;
+                    var consideredDate = e.StartTime;
 
-                            if (!removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
-                            {
-                                sameEvents.Add(duplicateE);
-                            }
-                        }
+                    if (consideredDate < fromDate.Value)
+                    {
+                        var times = (fromDate.Value - consideredDate).TotalDays / (e.RecurringInterval.Value * (e.RecurringUnit == RecurringUnit.DAY ? 1 : 7));
+                        UpdateDateTime(ref consideredDate, (int)Math.Ceiling(times) * e.RecurringInterval.Value, (RecurringUnit)e.RecurringUnit!);
                     }
-                    else
-                    {
-                        var startIndex = (int)Math.Ceiling((fromDate?.Date - e.StartTime.Date)?.TotalSeconds / duration ?? 0);
-                        for (int i = startIndex; i <= startIndex + maxTimes; i++)
-                        {
-                            if (e.StartTime.AddSeconds(i * (int)e.RecurringInterval) > e.RecurringEnd)
-                            {
-                                break;
-                            }
-                            var duplicateE = e.Clone();
-                            duplicateE.Id = Guid.NewGuid();
-                            duplicateE.StartTime = e.StartTime.AddSeconds(i * (int)e.RecurringInterval);
-                            duplicateE.EndTime = e.EndTime.AddSeconds(i * (int)e.RecurringInterval);
-                            duplicateE.CloneEventId = e.Id;
 
-                            if (!removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
-                            {
-                                sameEvents.Add(duplicateE);
-                            }
+                    for (int i = 0; consideredDate <= e.RecurringEnd && consideredDate <= endDate; i++)
+                    {
+                        //var consideredDate = e.StartTime;
+                        var timeSpan = e.EndTime - e.StartTime;
+                        var duplicateE = e.Clone();
+                        duplicateE.Id = Guid.NewGuid();
+                        duplicateE.StartTime = consideredDate;
+                        duplicateE.EndTime = consideredDate + timeSpan;
+                        duplicateE.CloneEventId = e.Id;
+
+                        if (!removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                        {
+                            sameEvents.Add(duplicateE);
                         }
+
+                        UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!);
                     }
 
                     finalEvents.AddRange(sameEvents);
@@ -117,7 +106,23 @@ namespace Sheca.Services
 
             return finalEvents.OrderBy(e => e.StartTime).ToList();
         }
-
+        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit)
+        {
+            switch (unit)
+            {
+                case RecurringUnit.DAY:
+                    current = current.AddDays(value);
+                    break;
+                case RecurringUnit.WEEK:
+                    current = current.AddDays(7* value);
+                    break;
+                //case RecurringUnit.MONTH:
+                //    current.AddMonths(1);
+                //    break;
+                default:
+                    break;
+            }
+        }
         Task<Event> IEventService.GetById(int Id)
         {
             throw new NotImplementedException();

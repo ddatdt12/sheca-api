@@ -21,7 +21,7 @@ namespace Sheca.Services.Mail
                 smtp.EnableSsl = true;
                 smtp.UseDefaultCredentials = false;
                 smtp.Host = "smtp.gmail.com";
-                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "rekjerpennrybnpa");
+                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "eqnlphxknczjvhbm");
                 smtp.Send(mail);
             });
             return code;
@@ -42,7 +42,7 @@ namespace Sheca.Services.Mail
                 smtp.EnableSsl = true;
                 smtp.UseDefaultCredentials = false;
                 smtp.Host = "smtp.gmail.com";
-                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "lfrtpskqnkxqczhl");
+                smtp.Credentials = new NetworkCredential("Shecaapp@gmail.com", "eqnlphxknczjvhbm");
                 smtp.Send(mail);
             });
             return code;
