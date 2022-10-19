@@ -27,7 +27,7 @@ namespace Sheca.Common
         {
             DAY = 1,
             WEEK = 2,
-            //MONTH = 3,
+            MONTH = 3,
         }
     }
 }

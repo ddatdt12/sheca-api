@@ -18,10 +18,15 @@ namespace Sheca.Services
             _mapper = mapper;
         }
 
-        async Task<Event> IEventService.Create(CreateEventDto e, string userId)
+        async Task<Event> IEventService.Create(CreateEventDto e, string userId, CancellationToken cancellationToken)
         {
+
+            if (e.RecurringUnit == RecurringUnit.WEEK && (e.RecurringDetails == null || e.RecurringDetails.Count == 0))
+            {
+                throw new ApiException("With week recurring option, Please choose days of week recurs", 400);
+            }
             Event @event = _mapper.Map<Event>(e);
-            
+
             if (@event.RecurringInterval.HasValue)
             {
                 @event.RecurringStart = @event.StartTime;
@@ -29,12 +34,12 @@ namespace Sheca.Services
 
             @event.UserId = new Guid(userId);
             _context.Events.Add(@event);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return @event;
         }
 
-        async Task<IEnumerable<Event>> IEventService.Get(string userId, FilterEvent filter)
+        async Task<IEnumerable<Event>> IEventService.Get(string userId, FilterEvent filter, CancellationToken cT)
         {
             var guidUserId = new Guid(userId);
             var query = _context.Events.Where(e => e.UserId == guidUserId);
@@ -43,7 +48,6 @@ namespace Sheca.Services
             var duration = (endDate - fromDate)?.TotalSeconds ?? 0;
             var totalDays = (endDate - fromDate)?.TotalSeconds ?? 0;
             var totalWeeks = (endDate - fromDate)?.TotalDays / 7 ?? 0;
-            //var totalMonths = (endDate - fromDate)?.Total ?? 0;
 
             if (fromDate.HasValue && endDate.HasValue)
             {
@@ -51,10 +55,8 @@ namespace Sheca.Services
                 (e.StartTime.Date >= fromDate && e.StartTime.Date <= endDate)
                 || (e.RecurringInterval != null && e.RecurringInterval != 0 && e.StartTime.Date < fromDate
                 &&
-               (e.RecurringUnit == RecurringUnit.DAY && totalDays / e.RecurringInterval >= 1) ||
-                (e.RecurringUnit == RecurringUnit.WEEK && totalWeeks / e.RecurringInterval >= 1)
-                )
-                );
+               (e.RecurringStart < endDate && (!e.RecurringEnd.HasValue || e.RecurringEnd > fromDate))
+                ));
             }
             else
             {
@@ -67,7 +69,7 @@ namespace Sheca.Services
                     query = query.Where(e => e.StartTime < endDate);
                 }
             }
-            var listEvents = await query.ToListAsync();
+            var listEvents = await query.ToListAsync(cT);
             var finalEvents = new List<Event>();
             listEvents.ForEach(e =>
             {
@@ -91,8 +93,7 @@ namespace Sheca.Services
                         duplicateE.StartTime = consideredDate;
                         duplicateE.EndTime = consideredDate + timeSpan;
                         duplicateE.CloneEventId = e.Id;
-
-                        if (!removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                        if ((duplicateE.StartTime >= fromDate && duplicateE.EndTime <= endDate) && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
                         {
                             sameEvents.Add(duplicateE);
                         }
@@ -111,7 +112,7 @@ namespace Sheca.Services
 
             return finalEvents.OrderBy(e => e.StartTime).ToList();
         }
-        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit)
+        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit, string? details = null)
         {
             switch (unit)
             {
@@ -121,19 +122,19 @@ namespace Sheca.Services
                 case RecurringUnit.WEEK:
                     current = current.AddDays(7 * value);
                     break;
-                //case RecurringUnit.MONTH:
-                //    current.AddMonths(1);
-                //    break;
+                case RecurringUnit.MONTH:
+                    current.AddMonths(value);
+                    break;
                 default:
                     break;
             }
         }
-        Task<Event> IEventService.GetById(int Id)
+        Task<Event> IEventService.GetById(int Id, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        async Task IEventService.Delete(string userId, DeleteEventDto dE)
+        async Task IEventService.Delete(string userId, DeleteEventDto dE, CancellationToken cancellationToken)
         {
             if (!dE.CloneEventId.HasValue && !dE.Id.HasValue && !dE.BaseEventId.HasValue && (dE.BaseEventId.HasValue || !dE.StartTime.HasValue))
             {
@@ -152,11 +153,11 @@ namespace Sheca.Services
                 ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(dE.StartTime.Value.Ticks).TotalSeconds}";
                 if (dE.TargetType == TargetType.THIS)
                 {
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
                 else
                 {
-                    await _context.Events.DeleteByKeyAsync(mainEventId);
+                    await _context.Events.DeleteByKeyAsync(cancellationToken, mainEventId);
                 }
 
                 return;
@@ -179,11 +180,11 @@ namespace Sheca.Services
                 if (dE.TargetType == TargetType.THIS)
                 {
                     _context.Events.Remove(ev);
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
                 else
                 {
-                    await _context.Events.DeleteByKeyAsync(mainEventId);
+                    await _context.Events.DeleteByKeyAsync(cancellationToken, mainEventId);
                 }
 
                 return;
@@ -203,10 +204,10 @@ namespace Sheca.Services
             {
                 _context.Events.Remove(e);
             }
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task Update(UpdateEventDto upE, string userId)
+        public async Task Update(UpdateEventDto upE, string userId, CancellationToken cancellationToken = default)
         {
             if (!upE.CloneEventId.HasValue && !upE.Id.HasValue && !upE.BaseEventId.HasValue && (upE.BaseEventId.HasValue || !upE.BeforeStartTime.HasValue))
             {
@@ -287,7 +288,7 @@ namespace Sheca.Services
                                 _mapper.Map(upE, @event);
                             }
 
-                            await _context.BulkSaveChangesAsync();
+                            await _context.BulkSaveChangesAsync(cancellationToken);
                         }
                         else
                         {
@@ -298,7 +299,7 @@ namespace Sheca.Services
                                 var newEvent = currentEvent!.Clone();
                                 _mapper.Map(upE, newEvent);
                                 await _context.Events.AddAsync(newEvent);
-                                await _context.BulkSaveChangesAsync();
+                                await _context.BulkSaveChangesAsync(cancellationToken);
                             }
                         }
                     }

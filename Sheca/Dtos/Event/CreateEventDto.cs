@@ -21,7 +21,6 @@ namespace Sheca.Dtos
         public DateTime EndTime { get; set; }
         public string ColorCode { get; set; }
         public int? NotiBeforeTime { get; set; }     //minutes
-        public DateTime? RecurringStart { get; set; }
         [SameExist("RecurringUnit", ErrorMessage = "RecurringUnit and RecurringInterval must exist in same time")]
         public int? RecurringInterval { get; set; }
         public RecurringUnit? RecurringUnit { get; set; }

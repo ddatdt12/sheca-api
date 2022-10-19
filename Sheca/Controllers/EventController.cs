@@ -26,10 +26,10 @@ namespace Sheca.Controllers
 
         [HttpGet]
         [Produces(typeof(ApiResponse<IEnumerable<EventDto>>))]
-        public async Task<IActionResult> Get([FromQuery] FilterEvent filter)
+        public async Task<IActionResult> Get([FromQuery] FilterEvent filter, CancellationToken cT)
         {
             var userId = HttpContext.Items["UserId"] as string;
-            var events = await _eventService.Get(userId!, filter);
+            var events = await _eventService.Get(userId!, filter, cT);
 
             var eventDtos = _mapper.Map<IEnumerable<Event>, IEnumerable<EventDto>>(events);
             return Ok(new ApiResponse<IEnumerable<EventDto>>(eventDtos, "Get Events successfully"));
@@ -38,10 +38,10 @@ namespace Sheca.Controllers
         [HttpPost]
         [ValidateModel]
         [Produces(typeof(ApiResponse<EventDto>))]
-        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto newE)
+        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto newE, CancellationToken cT)
         {
             var userId = HttpContext.Items["UserId"] as string;
-            var @event = await _eventService.Create(newE, userId!);
+            var @event = await _eventService.Create(newE, userId!, cT);
             return Ok(new ApiResponse<EventDto>(_mapper.Map<EventDto>(@event), "Create event successfully"));
         }
 
@@ -61,10 +61,10 @@ namespace Sheca.Controllers
             Description = @"Requires login;\n , TargetType { THIS, THIS_AND_FOLLOWING, ALL}",
             OperationId = "DeleteEvent"
         )]
-        public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventDto deleteEventDto)
+        public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventDto deleteEventDto, CancellationToken cT)
         {
             var userId = HttpContext.Items["UserId"] as string;
-            await _eventService.Delete(userId!, deleteEventDto);
+            await _eventService.Delete(userId!, deleteEventDto, cT);
             return NoContent();
         }
 
