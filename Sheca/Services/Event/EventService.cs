@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos;
 using Sheca.Error;
+using Sheca.Helper;
 using Sheca.Models;
 using static Sheca.Common.Enum;
 
@@ -78,7 +79,7 @@ namespace Sheca.Services
                     var sameEvents = new List<Event>();
                     var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
                     var consideredDate = e.StartTime;
-
+                    List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails?.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
                     if (consideredDate < fromDate.Value)
                     {
                         var times = (fromDate.Value - consideredDate).TotalDays / (e.RecurringInterval.Value * (e.RecurringUnit == RecurringUnit.DAY ? 1 : 7));
@@ -98,7 +99,7 @@ namespace Sheca.Services
                             sameEvents.Add(duplicateE);
                         }
 
-                        UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!);
+                        UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!, dayOfWeeksRecurrings);
                     }
 
                     finalEvents.AddRange(sameEvents);
@@ -112,7 +113,7 @@ namespace Sheca.Services
 
             return finalEvents.OrderBy(e => e.StartTime).ToList();
         }
-        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit, string? details = null)
+        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit, List<DayOfWeek>? details = null)
         {
             switch (unit)
             {
@@ -120,7 +121,15 @@ namespace Sheca.Services
                     current = current.AddDays(value);
                     break;
                 case RecurringUnit.WEEK:
-                    current = current.AddDays(7 * value);
+                    var min = current;
+                    foreach (var day in details!)
+                    {
+                        var nextDate = Utils.GetNextWeekday(current, day);
+                        if (nextDate < min)
+                        {
+                            current = nextDate;
+                        }
+                    }
                     break;
                 case RecurringUnit.MONTH:
                     current.AddMonths(value);
