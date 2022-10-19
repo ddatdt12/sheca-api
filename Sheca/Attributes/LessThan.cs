@@ -28,7 +28,7 @@ namespace Sheca.Attributes
             //if (property.GetType() != value?.GetType())
             //    throw new ArgumentException("Type not match");
 
-            dynamic? comparisonValue = property.GetValue(validationContext.ObjectInstance);
+            var comparisonValue = (DateTime?)property.GetValue(validationContext.ObjectInstance);
             if (_acceptNull && comparisonValue == null) { return ValidationResult.Success; }
 
             if ((DateTime)value < comparisonValue)

@@ -99,7 +99,7 @@ namespace Sheca.Services
                             sameEvents.Add(duplicateE);
                         }
 
-                        UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!, dayOfWeeksRecurrings);
+                        UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!, i, dayOfWeeksRecurrings);
                     }
 
                     finalEvents.AddRange(sameEvents);
@@ -113,7 +113,7 @@ namespace Sheca.Services
 
             return finalEvents.OrderBy(e => e.StartTime).ToList();
         }
-        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit, List<DayOfWeek>? details = null)
+        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit, int index = 0, List<DayOfWeek>? details = null)
         {
             switch (unit)
             {
@@ -121,15 +121,20 @@ namespace Sheca.Services
                     current = current.AddDays(value);
                     break;
                 case RecurringUnit.WEEK:
-                    var min = current;
-                    foreach (var day in details!)
+                    if (details == null || details.Count == 0)
                     {
-                        var nextDate = Utils.GetNextWeekday(current, day);
+                        return;
+                    }
+                    var min = DateTime.MaxValue;
+                    foreach (var day in details)
+                    {
+                        var nextDate = Utils.GetNextWeekday(current, day, index == 0 ? 1 : value);
                         if (nextDate < min)
                         {
-                            current = nextDate;
+                            min = nextDate;
                         }
                     }
+                    current = min;
                     break;
                 case RecurringUnit.MONTH:
                     current.AddMonths(value);
