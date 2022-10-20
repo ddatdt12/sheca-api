@@ -10,11 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureCors();
 
 // Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(x =>
-{
-    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+builder.Services.AddControllers().AddCustomOptions();
 
 builder.Services.AddSignalR();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -22,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.ConfigureSwaggerOptions();
+    c.EnableAnnotations();
 });
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 

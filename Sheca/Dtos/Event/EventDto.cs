@@ -1,4 +1,7 @@
-﻿namespace Sheca.Dtos
+﻿using Sheca.Attributes;
+using static Sheca.Common.Enum;
+
+namespace Sheca.Dtos
 {
     public class EventDto
     {
@@ -19,13 +22,19 @@
         public string ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
-        public Guid? BaseEvent { get; set; }
+        public Guid? BaseEventId { get; set; }
+        public Guid? CloneEventId { get; set; }
         public int? CourseId { get; set; }
         public CourseDto? Course { get; set; }
         public Guid UserId { get; set; }
         public UserDto? User { get; set; }
+
+        [SameExist("RecurringInterval", ErrorMessage = "RecurringStart and RecurringType must exist in same time")]
         public DateTime? RecurringStart { get; set; }
+        [SameExist("RecurringUnit", ErrorMessage = "RecurringUnit and RecurringInterval must exist in same time")]
         public int? RecurringInterval { get; set; }
+        public RecurringUnit? RecurringUnit { get; set; }
+        public List<DayOfWeek>? RecurringDetails { get; set; }
         public DateTime? RecurringEnd { get; set; }
     }
 }

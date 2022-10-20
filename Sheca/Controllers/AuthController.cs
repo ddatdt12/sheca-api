@@ -27,8 +27,13 @@ namespace Sheca.Controllers
         public async Task<IActionResult> Login([FromBody] LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
-            var userDTO = _mapper.Map<UserDto>(user); userDTO.token = token;
-            return Ok(new ApiResponse<UserDto>(userDTO, "Login successfully."));
+            var userDTO = _mapper.Map<UserDto>(user);
+            userDTO.token = token;
+            return Ok(new
+            {
+                data = userDTO,
+                token = token,
+            });
         }
 
         [HttpPost("register")]
@@ -47,7 +52,7 @@ namespace Sheca.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody]string email)
+        public async Task<IActionResult> ForgotPassword([FromBody] string email)
         {
             await _auth.ForgotPassword(email);
             return Ok(new ApiResponse<string>(string.Empty, "Please check the code in your email. This code consists of 4 numbers."));

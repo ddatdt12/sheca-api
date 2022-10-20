@@ -18,7 +18,7 @@ namespace Sheca.Extensions
                         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                         context.Response.ContentType = "application/json";
 
-                        if (contextFeature != null)
+                            if (contextFeature != null)
                         {
                             logger.LogError($"Something went wrong: {contextFeature.Error}");
 

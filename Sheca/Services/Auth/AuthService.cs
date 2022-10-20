@@ -21,6 +21,7 @@ namespace Sheca.Services
         private static IDictionary<string, string> ListForgotPasswordAccount = new Dictionary<string, string>();
         private static IDictionary<string, string> ListResetPasswordAccount = new Dictionary<string, string>();
         public DataContext _context { get; set; }
+
         public AuthService(IConfiguration configuration, DataContext context, IMapper mapper, IMailService mailService)
         {
             _configuration = configuration;
@@ -28,6 +29,7 @@ namespace Sheca.Services
             _mapper = mapper;
             _mailService = mailService;
         }
+
         public string CreateToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
