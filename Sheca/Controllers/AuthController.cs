@@ -23,20 +23,17 @@ namespace Sheca.Controllers
             _mapper = mapper;
         }
         [HttpPost("login")]
-        [Produces(typeof(ApiResponse<LoginUserDto>))]
+        [Produces(typeof(ApiResponse<UserDto>))]
         public async Task<IActionResult> Login([FromBody] LoginUserDto loginUser)
         {
             (User? user, string? token) = await _auth.Login(loginUser);
             var userDTO = _mapper.Map<UserDto>(user);
-            userDTO.token = token;
-            return Ok(new
-            {
-                data = userDTO,
-                token = token,
-            });
+            userDTO.Token = token;
+            return Ok(new ApiResponse<UserDto>(userDTO,"Login successfully"));
         }
 
         [HttpPost("register")]
+        [Produces(typeof(ApiResponse<string>))]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUser)
         {
             await _auth.Register(registerUser);
@@ -44,10 +41,11 @@ namespace Sheca.Controllers
         }
 
         [HttpPost("verify-account")]
+        [Produces(typeof(ApiResponse<UserDto>))]
         public async Task<IActionResult> VerifyEmailToken([FromBody] TokenDTO tokenDTO)
         {
             (User user, string token) = await _auth.VerifyEmailToken(tokenDTO);
-            var userDTO = _mapper.Map<UserDto>(user); userDTO.token = token;
+            var userDTO = _mapper.Map<UserDto>(user); userDTO.Token = token;
             return Ok(new ApiResponse<UserDto>(userDTO, "Verify account successfully!"));
         }
 
@@ -66,10 +64,12 @@ namespace Sheca.Controllers
         }
 
         [HttpPost("reset-password")]
+        [Produces(typeof(ApiResponse<UserDto>))]
         public async Task<IActionResult> ResetPassword(TokenResetPasswordDto reUser)
         {
             (User user, string token) = await _auth.ResetPassword(reUser);
-            var userDTO = _mapper.Map<UserDto>(user); userDTO.token = token;
+            var userDTO = _mapper.Map<UserDto>(user);
+            userDTO.Token = token;
             return Ok(new ApiResponse<UserDto>(userDTO, "Reset Password successfully."));
         }
 
