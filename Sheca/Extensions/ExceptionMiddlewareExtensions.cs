@@ -36,6 +36,12 @@ namespace Sheca.Extensions
                                 message = updateErr?.InnerException?.Message ?? updateErr?.Message ?? "";
                             }
 
+                            if (contextFeature?.Error?.InnerException != null)
+                            {
+                                message = contextFeature?.Error?.InnerException.Message ?? "";
+                            }
+
+
                             Exception errorRes = new ApiException(message, statusCode: context.Response.StatusCode);
                             await context.Response.WriteAsync(errorRes.ToString());
                         }
