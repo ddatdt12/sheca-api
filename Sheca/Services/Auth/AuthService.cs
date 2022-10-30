@@ -40,7 +40,7 @@ namespace Sheca.Services
                 {
                     new Claim("UserId", user.Id.ToString()),
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(15),
+                Expires = DateTime.Now.AddMonths(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
