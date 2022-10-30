@@ -91,9 +91,18 @@ namespace Sheca.Services
             {
                 throw new ApiException("Email have already existed!", 400);
             }
+            Token token;
+            if (ListTokenAccount.TryGetValue(userDTO.Email, out token!))
+            {
+                if (token.ExpiredAt > DateTime.Now)
+                {
+                    throw new ApiException("Please try again in 2 minutes", 400);
+                }
+                ListTokenAccount.Remove(userDTO.Email);
+            }
             var tokenCode = await _mailService.SendRegisterMail(userDTO.Email);
             User _user = _mapper.Map<User>(userDTO);
-            var code = new Token { Code = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(5), User = _user };
+            var code = new Token { Code = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(2), User = _user };
             ListTokenAccount.Add(_user.Email, code);
         }
 
