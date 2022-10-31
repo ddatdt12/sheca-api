@@ -10,8 +10,8 @@ public class MapperProfile : Profile
 
         //Course
         CreateMap<CourseDto, Course>();
-        CreateMap<Course, CourseDto>();
-        CreateMap<CreateCourseDto, Course>();
+        CreateMap<Course, CourseDto>().ForMember(c => c.DayOfWeeks, opt => opt.MapFrom(source => source.DayOfWeeks.Split(';', StringSplitOptions.None).Select(d => (DayOfWeek)int.Parse(d))));
+        CreateMap<CreateCourseDto, Course>().ForMember(c => c.DayOfWeeks, opt => opt.MapFrom(source => string.Join(";", source.DayOfWeeks.Select(d => (int)d))));
         CreateMap<UpdateEventDto, Course>().ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         //Event

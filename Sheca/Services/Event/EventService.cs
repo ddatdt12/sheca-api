@@ -44,6 +44,7 @@ namespace Sheca.Services
         {
             var guidUserId = new Guid(userId);
             var query = _context.Events.Where(e => e.UserId == guidUserId);
+            var courseQuery = _context.Courses.Where(e => e.UserId == guidUserId);
             DateTime fromDate = filter?.FromDate?.Date ?? DateTime.MinValue;
             DateTime endDate = filter?.ToDate?.Date.AddDays(1) ?? fromDate.AddDays(365);
             var duration = (endDate - fromDate).TotalSeconds;
@@ -59,22 +60,58 @@ namespace Sheca.Services
                     &&
                    (e.RecurringStart < endDate && (!e.RecurringEnd.HasValue || e.RecurringEnd > fromDate))
                     ));
+
+                    courseQuery = courseQuery.Where(e =>
+                    !(e.StartDate.Date > endDate && e.EndDate.Date < fromDate));
                 }
                 else
                 {
                     if (filter.FromDate.HasValue)
                     {
                         query = query.Where(e => e.EndTime > fromDate);
+                        courseQuery = courseQuery.Where(e => e.StartDate >= fromDate);
                     }
                     if (filter.ToDate.HasValue)
                     {
-                        query = query.Where(e => e.StartTime < endDate);
+                        query = query.Where(e => e.StartTime <= endDate);
                     }
                 }
             }
 
             var listEvents = await query.ToListAsync(cT);
+            var listCourses = await courseQuery.ToListAsync(cT);
             var finalEvents = new List<Event>();
+
+            listCourses.ForEach(c =>
+            {
+                var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
+                var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
+                var timeSpan = c.EndTime - c.StartTime;
+
+                //Tìm ngày hợp lệ gần nhất
+                foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                {
+                    var nextDate = Utils.GetNextWeekday(startDateTemp, day);
+                    while (nextDate < endDateTemp)
+                    {
+                        var startTime = nextDate.Date.AddSeconds(c.StartTime);
+                        finalEvents.Add(new Event
+                        {
+                            Id = Guid.NewGuid(),
+                            Title = c.Title,
+                            Description = c.Description,
+                            CourseId = c.Id,
+                            StartTime = startTime,
+                            EndTime = startTime.AddSeconds(timeSpan),
+                            NotiBeforeTime = c.NotiBeforeTime,
+                            ColorCode = c.ColorCode,
+                            UserId = c.UserId,
+                        });
+                        nextDate = nextDate.AddDays(7);
+                    }
+                }
+            });
+
             listEvents.ForEach(e =>
             {
                 if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
