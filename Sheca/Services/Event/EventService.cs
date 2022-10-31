@@ -97,7 +97,14 @@ namespace Sheca.Services
                             for (int dI = 0; dI < recurringCount; dI++)
                             {
                                 var duplicateE = e.Clone();
-                                duplicateE.Id = Guid.NewGuid();
+                                if (e.CloneEventId == null && e.BaseEventId == null)
+                                {
+                                    duplicateE.Id = e.Id;
+                                }
+                                else
+                                {
+                                    duplicateE.Id = Guid.NewGuid();
+                                }
                                 duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
                                 duplicateE.EndTime = duplicateE.StartTime + timeSpan;
                                 duplicateE.CloneEventId = e.Id;
@@ -263,8 +270,21 @@ namespace Sheca.Services
 
                 if (upE.TargetType == TargetType.ALL)
                 {
-                    throw new ApiException("This target type is not supported", 400);
+                    if (!upE.BeforeStartTime.HasValue)
+                    {
+                        throw new ApiException("Please provide start time of this event", 400);
+                    }
+
+                    if (upE.StartTime.HasValue && upE.StartTime?.Date != upE.BeforeStartTime?.Date)
+                    {
+                        throw new ApiException("This target type is not supported", 400);
+                    }
+                    var listNotUsedEvents = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync(cancellationToken);
+                    _context.Events.RemoveRange(listNotUsedEvents);
+                    _mapper.Map(upE, currentEvent);
+                    await _context.BulkSaveChangesAsync(cancellationToken);
                 }
+                else
                 if (upE.TargetType == TargetType.THIS)
                 {
                     if (typeId == "CloneId")
@@ -308,15 +328,25 @@ namespace Sheca.Services
                     }
                     else
                     {
-                        if (upE.BeforeStartTime == currentEvent.StartTime)
+                        if (upE.StartTime?.Date != currentEvent.StartTime.Date)
                         {
-                            var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
+                            var newEv = currentEvent.Clone();
+                            _mapper.Map(upE, newEv);
+                            newEv.Id = Guid.NewGuid();
+                            await _context.Events.AddAsync(newEv);
 
-                            _mapper.Map(upE, currentEvent);
-                            foreach (var @event in events)
+                            if (currentEvent.Id == upE.Id)
                             {
-                                _mapper.Map(upE, @event);
+                                var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
+
+                                _context.Events.RemoveRange(events);
+                                _context.Events.Remove(currentEvent);
                             }
+                            else
+                            {
+                                currentEvent.RecurringEnd = upE.StartTime?.Date;
+                            }
+
 
                             await _context.BulkSaveChangesAsync(cancellationToken);
                         }

@@ -18,11 +18,10 @@ namespace Sheca.Services
         public async Task<IEnumerable<Course>> Get(Guid userId)
         {
             return await _context.Courses.Where(c => c.UserId == userId).ToListAsync();
-        }
+        }   
         public async Task<Course> Create(CreateCourseDto c, Guid userId)
         {
             Course course = _mapper.Map<Course>(c);
-            var transaction = _context.Database.BeginTransaction();
             try
             {
                 if (!c.EndDate.HasValue && !c.NumOfLessons.HasValue)
@@ -34,7 +33,6 @@ namespace Sheca.Services
                 await _context.Courses.AddAsync(course);
 
                 int learnDay = 0;
-                List<Event> evs = new List<Event>();
                 if (c.EndDate.HasValue)
                 {
                     var totalDays = (c.EndDate - c.StartDate).Value.TotalDays;
@@ -48,31 +46,10 @@ namespace Sheca.Services
                 }
 
                 await _context.SaveChangesAsync();
-
-                for (int i = 0; i < learnDay; i++)
-                {
-                    var startTime = c.StartDate.AddDays(i * 7).AddSeconds(c.StartTime);
-                    var endTime = c.StartDate.AddDays(i * 7).AddSeconds(c.EndTime);
-                    evs.Add(new Event
-                    {
-                        NotiBeforeTime = c.NotiBeforeTime,
-                        ColorCode = c.ColorCode,
-                        CourseId = course.Id,
-                        Title = c.Title,
-                        Description = c.Description,
-                        StartTime = startTime,
-                        EndTime = endTime,
-                        UserId = userId
-                    });
-                }
-
-                await _context.BulkInsertAsync(evs);
-                await transaction.CommitAsync();
                 return course;
             }
             catch (Exception)
             {
-                await transaction.RollbackAsync();
                 throw;
             }
         }
