@@ -82,7 +82,7 @@ namespace Sheca.Services
                         course.EndDate = course.StartDate.AddDays((learnDay - 1) * 7);
                     }
                 }
-                await _context.BulkSaveChangesAsync();
+                await _context.SaveChangesAsync();
                 return course;
             }
             catch (Exception)

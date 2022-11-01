@@ -12,7 +12,9 @@ public class MapperProfile : Profile
         CreateMap<CourseDto, Course>();
         CreateMap<Course, CourseDto>().ForMember(c => c.DayOfWeeks, opt => opt.MapFrom(source => source.DayOfWeeks.Split(';', StringSplitOptions.None).Select(d => (DayOfWeek)int.Parse(d))));
         CreateMap<CreateCourseDto, Course>().ForMember(c => c.DayOfWeeks, opt => opt.MapFrom(source => string.Join(";", source.DayOfWeeks.Select(d => (int)d))));
-        CreateMap<UpdateEventDto, Course>().ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+        CreateMap<UpdateCourseDto, Course>()
+            .ForMember(c => c.DayOfWeeks, opt => opt.MapFrom(source => source.DayOfWeeks != null ? string.Join(";", source.DayOfWeeks.Select(d => (int)d)) : null))
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         //Event
         _ = CreateMap<Event, EventDto>().ForMember(e => e.RecurringDetails,
