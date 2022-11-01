@@ -31,11 +31,10 @@ namespace Sheca.Models
         public Event? BaseEvent { get; set; }
         [NotMapped]
         public Guid? CloneEventId { get; set; }
+        [NotMapped]
         public int? CourseId { get; set; }
         public Guid UserId { get; set; }
         public User? User{ get; set; }
-        public Course? Course { get; set; }
-
         public DateTime? RecurringStart { get; set; }
         public int? RecurringInterval { get; set; }
         public RecurringUnit? RecurringUnit { get; set; }

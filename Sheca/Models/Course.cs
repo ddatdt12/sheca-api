@@ -19,6 +19,8 @@ namespace Sheca.Models
         public string Description { get; set; }
         public int StartTime { get; set; }
         public int EndTime { get; set; }
+        [Column(TypeName = "varchar(20)")]
+        public string DayOfWeeks { get; set; }
         public int NumOfLessonsPerDay { get; set; }
         [Column(TypeName = "date")]
         public DateTime StartDate { get; set; }

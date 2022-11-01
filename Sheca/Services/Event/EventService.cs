@@ -44,6 +44,7 @@ namespace Sheca.Services
         {
             var guidUserId = new Guid(userId);
             var query = _context.Events.Where(e => e.UserId == guidUserId);
+            var courseQuery = _context.Courses.Where(e => e.UserId == guidUserId);
             DateTime fromDate = filter?.FromDate?.Date ?? DateTime.MinValue;
             DateTime endDate = filter?.ToDate?.Date.AddDays(1) ?? fromDate.AddDays(365);
             var duration = (endDate - fromDate).TotalSeconds;
@@ -59,22 +60,58 @@ namespace Sheca.Services
                     &&
                    (e.RecurringStart < endDate && (!e.RecurringEnd.HasValue || e.RecurringEnd > fromDate))
                     ));
+
+                    courseQuery = courseQuery.Where(e =>
+                    !(e.StartDate.Date > endDate && e.EndDate.Date < fromDate));
                 }
                 else
                 {
                     if (filter.FromDate.HasValue)
                     {
                         query = query.Where(e => e.EndTime > fromDate);
+                        courseQuery = courseQuery.Where(e => e.StartDate >= fromDate);
                     }
                     if (filter.ToDate.HasValue)
                     {
-                        query = query.Where(e => e.StartTime < endDate);
+                        query = query.Where(e => e.StartTime <= endDate);
                     }
                 }
             }
 
             var listEvents = await query.ToListAsync(cT);
+            var listCourses = await courseQuery.ToListAsync(cT);
             var finalEvents = new List<Event>();
+
+            listCourses.ForEach(c =>
+            {
+                var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
+                var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
+                var timeSpan = c.EndTime - c.StartTime;
+
+                //Tìm ngày hợp lệ gần nhất
+                foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                {
+                    var nextDate = Utils.GetNextWeekday(startDateTemp, day);
+                    while (nextDate < endDateTemp)
+                    {
+                        var startTime = nextDate.Date.AddSeconds(c.StartTime);
+                        finalEvents.Add(new Event
+                        {
+                            Id = Guid.NewGuid(),
+                            Title = c.Title,
+                            Description = c.Description,
+                            CourseId = c.Id,
+                            StartTime = startTime,
+                            EndTime = startTime.AddSeconds(timeSpan),
+                            NotiBeforeTime = c.NotiBeforeTime,
+                            ColorCode = c.ColorCode,
+                            UserId = c.UserId,
+                        });
+                        nextDate = nextDate.AddDays(7);
+                    }
+                }
+            });
+
             listEvents.ForEach(e =>
             {
                 if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
@@ -97,7 +134,14 @@ namespace Sheca.Services
                             for (int dI = 0; dI < recurringCount; dI++)
                             {
                                 var duplicateE = e.Clone();
-                                duplicateE.Id = Guid.NewGuid();
+                                if (e.CloneEventId == null && e.BaseEventId == null)
+                                {
+                                    duplicateE.Id = e.Id;
+                                }
+                                else
+                                {
+                                    duplicateE.Id = Guid.NewGuid();
+                                }
                                 duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
                                 duplicateE.EndTime = duplicateE.StartTime + timeSpan;
                                 duplicateE.CloneEventId = e.Id;
@@ -263,8 +307,21 @@ namespace Sheca.Services
 
                 if (upE.TargetType == TargetType.ALL)
                 {
-                    throw new ApiException("This target type is not supported", 400);
+                    if (!upE.BeforeStartTime.HasValue)
+                    {
+                        throw new ApiException("Please provide start time of this event", 400);
+                    }
+
+                    if (upE.StartTime.HasValue && upE.StartTime?.Date != upE.BeforeStartTime?.Date)
+                    {
+                        throw new ApiException("This target type is not supported", 400);
+                    }
+                    var listNotUsedEvents = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync(cancellationToken);
+                    _context.Events.RemoveRange(listNotUsedEvents);
+                    _mapper.Map(upE, currentEvent);
+                    await _context.BulkSaveChangesAsync(cancellationToken);
                 }
+                else
                 if (upE.TargetType == TargetType.THIS)
                 {
                     if (typeId == "CloneId")
@@ -308,15 +365,25 @@ namespace Sheca.Services
                     }
                     else
                     {
-                        if (upE.BeforeStartTime == currentEvent.StartTime)
+                        if (upE.StartTime?.Date != currentEvent.StartTime.Date)
                         {
-                            var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
+                            var newEv = currentEvent.Clone();
+                            _mapper.Map(upE, newEv);
+                            newEv.Id = Guid.NewGuid();
+                            await _context.Events.AddAsync(newEv);
 
-                            _mapper.Map(upE, currentEvent);
-                            foreach (var @event in events)
+                            if (currentEvent.Id == upE.Id)
                             {
-                                _mapper.Map(upE, @event);
+                                var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
+
+                                _context.Events.RemoveRange(events);
+                                _context.Events.Remove(currentEvent);
                             }
+                            else
+                            {
+                                currentEvent.RecurringEnd = upE.StartTime?.Date;
+                            }
+
 
                             await _context.BulkSaveChangesAsync(cancellationToken);
                         }

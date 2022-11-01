@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sheca.Models;
 
@@ -11,9 +12,10 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221031152945_DayOfWeek_Course")]
+    partial class DayOfWeek_Course
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,6 +95,9 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -135,6 +140,8 @@ namespace Sheca.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BaseEventId");
+
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("UserId");
 
@@ -191,6 +198,10 @@ namespace Sheca.Migrations
                         .WithMany()
                         .HasForeignKey("BaseEventId");
 
+                    b.HasOne("Sheca.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId");
+
                     b.HasOne("Sheca.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -198,6 +209,8 @@ namespace Sheca.Migrations
                         .IsRequired();
 
                     b.Navigation("BaseEvent");
+
+                    b.Navigation("Course");
 
                     b.Navigation("User");
                 });
