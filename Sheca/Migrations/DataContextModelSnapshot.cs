@@ -77,7 +77,7 @@ namespace Sheca.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Course");
+                    b.ToTable("Course", (string)null);
                 });
 
             modelBuilder.Entity("Sheca.Models.Event", b =>
@@ -138,7 +138,7 @@ namespace Sheca.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Event");
+                    b.ToTable("Event", (string)null);
                 });
 
             modelBuilder.Entity("Sheca.Models.User", b =>
@@ -157,7 +157,7 @@ namespace Sheca.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("User");
+                    b.ToTable("User", (string)null);
 
                     b.HasData(
                         new

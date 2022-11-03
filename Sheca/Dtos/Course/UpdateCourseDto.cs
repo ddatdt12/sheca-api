@@ -13,6 +13,7 @@ namespace Sheca.Dtos
         [Range(0, 86400, ErrorMessage = "EndTime is between 0 - 86400")]
         public int? EndTime { get; set; }
         public int? NumOfLessonsPerDay { get; set; }
+        [MinLength(1)]
         public List<DayOfWeek>? DayOfWeeks { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }

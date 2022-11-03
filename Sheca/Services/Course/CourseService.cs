@@ -69,12 +69,14 @@ namespace Sheca.Services
                 {
                     int learnDay = 0;
                     int dayOfWeeks = upCourse.DayOfWeeks != null ? upCourse.DayOfWeeks.Count : course.DayOfWeeks.Split(';').ToList().Count;
-                    if (upCourse.EndDate.HasValue)
+                    DateTime startDate = upCourse.StartDate ?? course.StartDate;
+                    DateTime endDate = upCourse.EndDate ?? course.EndDate;
+                    if (upCourse.EndDate.HasValue || upCourse.StartDate.HasValue)
                     {
-                        var totalDays = (course.EndDate - course.StartDate).TotalDays;
+                        var totalDays = (endDate - startDate).TotalDays;
                         learnDay = (int)Math.Round(totalDays / 7) + 1;
 
-                        course.NumOfLessons = learnDay * course.NumOfLessonsPerDay  * dayOfWeeks;
+                        course.NumOfLessons = learnDay * course.NumOfLessonsPerDay * dayOfWeeks;
                     }
                     else if (upCourse.NumOfLessons.HasValue)
                     {
@@ -82,7 +84,7 @@ namespace Sheca.Services
                         course.EndDate = course.StartDate.AddDays((learnDay - 1) * 7);
                     }
                 }
-                await _context.BulkSaveChangesAsync();
+                await _context.SaveChangesAsync();
                 return course;
             }
             catch (Exception)

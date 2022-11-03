@@ -52,7 +52,7 @@ namespace Sheca.Controllers
 
         [HttpDelete("{id}")]
         [Produces(typeof(NoContentResult))]
-        public async Task<IActionResult> Delete(int id, [FromBody] UpdateCourseDto course)
+        public async Task<IActionResult> Delete(int id)
         {
             var userId = HttpContext.Items["UserId"] as string;
             await _courseService.Delete(id, new Guid(userId!));
