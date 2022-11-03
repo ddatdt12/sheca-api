@@ -18,7 +18,7 @@ namespace Sheca.Services
         private readonly IMapper _mapper;
         private readonly IMailService _mailService;
         private static IDictionary<string, Token> ListTokenAccount = new Dictionary<string, Token>();
-        private static IDictionary<string, string> ListForgotPasswordAccount = new Dictionary<string, string>();
+        private static IDictionary<string, Token> ListForgotPasswordAccount = new Dictionary<string, Token>();
         private static IDictionary<string, string> ListResetPasswordAccount = new Dictionary<string, string>();
         public DataContext _context { get; set; }
 
@@ -93,9 +93,18 @@ namespace Sheca.Services
             {
                 throw new ApiException("Email have already existed!", 400);
             }
+            Token token;
+            if (ListTokenAccount.TryGetValue(userDTO.Email, out token!))
+            {
+                if (token.ExpiredAt > DateTime.Now)
+                {
+                    throw new ApiException("Please try again in 2 minutes", 400);
+                }
+                ListTokenAccount.Remove(userDTO.Email);
+            }
             var tokenCode = await _mailService.SendRegisterMail(userDTO.Email);
             User _user = _mapper.Map<User>(userDTO);
-            var code = new Token { Code = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(5), User = _user };
+            var code = new Token { Code = tokenCode, ExpiredAt = DateTime.Now.AddMinutes(2), User = _user };
             ListTokenAccount.Add(_user.Email, code);
         }
 
@@ -129,20 +138,30 @@ namespace Sheca.Services
             {
                 throw new ApiException("User not found.", 400);
             }
+            Token token;
+            if (ListForgotPasswordAccount.TryGetValue(email, out token!))
+            {
+                if (token.ExpiredAt > DateTime.Now)
+                {
+                    throw new ApiException("Please try again in 2 minutes", 400);
+                }
+                ListForgotPasswordAccount.Remove(email);
+            }
             var rePasswordCode = await _mailService.SendResetPasswordMail(email);
-            ListForgotPasswordAccount.Add(email, rePasswordCode);
+            ListForgotPasswordAccount.Add(email, new Token { Code = rePasswordCode, ExpiredAt = DateTime.Now.AddMinutes(2)});
         }
 
         public string VerifyResetPassword(string email, string value)
         {
-            string code;
-            if (!ListForgotPasswordAccount.TryGetValue(email, out code!) || value != code)
+            Token token;
+            if (!ListForgotPasswordAccount.TryGetValue(email, out token!) || value != token.Code)
             {
                 throw new ApiException("Code is wrong or expired!", 400);
             }
-            string token = CreateRandomToken();
-            ListResetPasswordAccount.Add(token, email);
-            return token;
+            ListForgotPasswordAccount.Remove(email);
+            string code = CreateRandomToken();
+            ListResetPasswordAccount.Add(code, email);
+            return code;
         }
 
         public async Task<(User, string)> ResetPassword(TokenResetPasswordDto user)
@@ -157,6 +176,7 @@ namespace Sheca.Services
             {
                 throw new ApiException("User not found.", 400);
             }
+            ListResetPasswordAccount.Remove(user.Token);
             _user.Password = user.Password;
             await _context.SaveChangesAsync();
             return (_user, CreateToken(_user));

@@ -24,5 +24,6 @@ namespace Sheca.Dtos
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int NumOfLessons { get; set; }
+        public string? ColorCode { get; set; }
     }
 }
