@@ -22,10 +22,27 @@ namespace Sheca.Services
         async Task<Event> IEventService.Create(CreateEventDto e, string userId, CancellationToken cancellationToken)
         {
 
-            if (e.RecurringUnit == RecurringUnit.WEEK && (e.RecurringDetails == null || e.RecurringDetails.Count == 0))
+            if (e.RecurringUnit == RecurringUnit.WEEK)
             {
-                throw new ApiException("With week recurring option, Please choose days of week recurs", 400);
+                if (e.RecurringDetails == null || e.RecurringDetails.Count == 0)
+                {
+                    throw new ApiException("With week recurring option, Please choose days of week recurs", 400);
+                }
+                DateTime minNextDate = DateTime.MaxValue;
+                var timeSpan = e.EndTime - e.StartTime;
+                foreach (var dOW in e.RecurringDetails)
+                {
+                    var nextDOW = Utils.GetNextWeekday(e.StartTime, dOW);
+                    if (nextDOW < minNextDate)
+                    {
+                        minNextDate = nextDOW;
+                    }
+                }
+                e.StartTime = minNextDate;
+                e.EndTime = e.StartTime + timeSpan;
             }
+
+
             Event @event = _mapper.Map<Event>(e);
 
             if (@event.RecurringInterval.HasValue)
@@ -134,15 +151,8 @@ namespace Sheca.Services
                             for (int dI = 0; dI < recurringCount; dI++)
                             {
                                 var duplicateE = e.Clone();
-                                if (e.CloneEventId == null && e.BaseEventId == null)
-                                {
-                                    duplicateE.Id = e.Id;
-                                }
-                                else
-                                {
-                                    duplicateE.Id = Guid.NewGuid();
-                                }
                                 duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
+                                duplicateE.Id = e.StartTime == duplicateE.StartTime ? e.Id : Guid.NewGuid();
                                 duplicateE.EndTime = duplicateE.StartTime + timeSpan;
                                 duplicateE.CloneEventId = e.Id;
                                 if (duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
@@ -208,78 +218,143 @@ namespace Sheca.Services
             throw new NotImplementedException();
         }
 
+        private DateTime AddTimeByUnit(RecurringUnit unit, DateTime date, int time)
+        {
+            switch (unit)
+            {
+                case RecurringUnit.DAY:
+                    return date.AddDays(time);
+                case RecurringUnit.MONTH:
+                    return date.AddMonths(time);
+                case RecurringUnit.WEEK:
+                    return date.AddDays(time * 7);
+                default:
+                    break;
+            }
+
+            return date;
+        }
+
         async Task IEventService.Delete(string userId, DeleteEventDto dE, CancellationToken cancellationToken)
         {
-            if (!dE.CloneEventId.HasValue && !dE.Id.HasValue && !dE.BaseEventId.HasValue && (dE.BaseEventId.HasValue || !dE.StartTime.HasValue))
+            using var transaction = _context.Database.BeginTransaction();
+            try
             {
-                throw new ApiException("Bad request", 400);
-            }
-
-            Guid mainEventId = Guid.Empty;
-            if (dE.CloneEventId.HasValue)
-            {
-                var ev = await _context.Events.FindAsync(dE.CloneEventId);
-                if (ev == null || !dE.StartTime.HasValue || ev.UserId.ToString() != userId)
+                if (!dE.CloneEventId.HasValue && !dE.Id.HasValue && !dE.BaseEventId.HasValue)
                 {
-                    throw new ApiException("Invalid event!", 404);
+                    throw new ApiException("Bad request", 400);
                 }
-                mainEventId = (Guid)dE.CloneEventId;
-                ev.ExceptDates += (string.IsNullOrEmpty(ev.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(dE.StartTime.Value.Ticks).TotalSeconds}";
+                var eventId = dE.CloneEventId ?? dE.Id;
+
+                string typeId = dE.CloneEventId.HasValue ? "CloneId" : (dE.BaseEventId.HasValue ? "BaseId" : "Main");
+   
+
+                var currentEvent = await _context.Events.FindAsync(eventId);
+                if (currentEvent == null || currentEvent.UserId.ToString() != userId)
+                {
+                    throw new ApiException("Event not exist!", 404);
+                }
+
+                if (dE.Id == dE.CloneEventId || dE.CloneEventId == currentEvent.Id)
+                {
+                    typeId = "Main";
+                }
+
+                if (typeId != "Main")
+                {
+                    if (dE.TargetType == TargetType.THIS)
+                    {
+                        if (currentEvent.BaseEventId != null)
+                        {
+                            _context.Events.Remove(currentEvent);
+                        }
+                        else
+                        {
+                            currentEvent.ExceptDates += (string.IsNullOrEmpty(currentEvent.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(dE.StartTime.Ticks).TotalSeconds}";
+                        }
+                    }
+                    else if (dE.TargetType == TargetType.THIS_AND_FOLLOWING)
+                    {
+                        currentEvent.RecurringEnd = AddTimeByUnit(currentEvent.RecurringUnit ?? RecurringUnit.DAY, dE.StartTime, -1 * (currentEvent.RecurringInterval ?? 0));
+                        await _context.Events.Where(e => e.BaseEventId == eventId && e.StartTime > dE.StartTime).DeleteFromQueryAsync(cancellationToken);
+                        await _context.SaveChangesAsync();
+                    }
+                    else // ALL
+                    {
+                        await _context.Events.Where(e => e.BaseEventId == eventId || e.Id == eventId).DeleteFromQueryAsync(cancellationToken);
+                    }
+
+                    return;
+                }
+
+
+                //Trường hợp xóa đúng tk lưu trong DB
                 if (dE.TargetType == TargetType.THIS)
                 {
-                    await _context.SaveChangesAsync(cancellationToken);
+                    var nextDateTime = AddTimeByUnit(currentEvent.RecurringUnit ?? RecurringUnit.DAY, dE.StartTime, -1 * (currentEvent.RecurringInterval ?? 0));
+
+                    var existEvent = await _context.Events.Where(e => e.BaseEventId == eventId && nextDateTime == e.StartTime).FirstOrDefaultAsync();
+
+                    if (existEvent == null)
+                    {
+                        var newEv = currentEvent.Clone();
+                        newEv.Id = Guid.NewGuid();
+                        newEv.StartTime = nextDateTime;
+                        newEv.RecurringStart = nextDateTime;
+                        await _context.AddAsync(newEv);
+                    }
+                    else
+                    {
+                        existEvent.BaseEventId = null;
+                        await _context.Events
+                        .Where(e => e.BaseEventId == eventId && nextDateTime == e.StartTime)
+                        .UpdateFromQueryAsync(e => new Event { BaseEventId = existEvent.Id }, cancellationToken);
+                    }
+
+                    _context.Remove(currentEvent);
+                    await _context.BulkSaveChangesAsync();
                 }
                 else
                 {
-                    await _context.Events.DeleteByKeyAsync(cancellationToken, mainEventId);
+                    await _context.Events.Where(e => e.BaseEventId == eventId || e.Id == eventId).DeleteFromQueryAsync(cancellationToken);
                 }
 
-                return;
+                await transaction.CommitAsync();
             }
-            else
-            if (dE.BaseEventId.HasValue)
+            catch (Exception)
             {
-                if (dE.Id.HasValue)
-                {
-                    throw new ApiException("Insufficient data", 400);
-                }
-                mainEventId = (Guid)dE.BaseEventId;
-
-                var ev = await _context.Events.FindAsync(dE.Id);
-                if (ev == null || ev.UserId.ToString() != userId)
-                {
-                    throw new ApiException("Invalid event!", 404);
-                }
-
-                if (dE.TargetType == TargetType.THIS)
-                {
-                    _context.Events.Remove(ev);
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-                else
-                {
-                    await _context.Events.DeleteByKeyAsync(cancellationToken, mainEventId);
-                }
-
-                return;
+                await transaction.RollbackAsync();
+                throw;
             }
-
-            var e = await _context.Events.FindAsync(dE.Id);
-            if (e == null || e.UserId.ToString() != userId)
-            {
-                throw new ApiException("Event not found", 404);
-            }
-
-            if (dE.TargetType == TargetType.THIS)
-            {
-                e.ExceptDates += (string.IsNullOrEmpty(e.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(dE.StartTime!.Value.Ticks).TotalSeconds}";
-            }
-            else
-            {
-                _context.Events.Remove(e);
-            }
-            await _context.SaveChangesAsync(cancellationToken);
         }
+
+        //private void UpdateStartTime(UpdateEventDto upE, Event originalEvent)
+        //{
+
+        //    if (!upE.StartTime.HasValue && upE.RecurringDetails == null & upE?.RecurringDetails?.Count == 0)
+        //    {
+
+        //    }
+        //    var startTime = upE?.StartTime ?? originalEvent.StartTime;
+        //    var endTime = upE?.EndTime ?? originalEvent.EndTime;
+
+        //    DateTime minNextDate = DateTime.MaxValue;
+        //    var timeSpan = endTime - startTime;
+        //    if (timeSpan.Ticks < 0)
+        //    {
+        //        throw new ApiException("End Time must greater than start time", 400);
+        //    }
+        //    foreach (var dOW in e.RecurringDetails)
+        //    {
+        //        var nextDOW = Utils.GetNextWeekday(e.StartTime, dOW);
+        //        if (nextDOW < minNextDate)
+        //        {
+        //            minNextDate = nextDOW;
+        //        }
+        //    }
+        //    e.StartTime = minNextDate;
+        //    e.EndTime = e.StartTime + timeSpan;
+        //}
 
         public async Task Update(UpdateEventDto upE, string userId, CancellationToken cancellationToken = default)
         {
@@ -290,6 +365,10 @@ namespace Sheca.Services
             var eventId = upE.CloneEventId ?? upE.Id;
 
             string typeId = upE.CloneEventId.HasValue ? "CloneId" : (upE.BaseEventId.HasValue ? "BaseId" : "Main");
+            if (upE.Id == upE.CloneEventId)
+            {
+                typeId = "Main";
+            }
 
             var currentEvent = await _context.Events.FindAsync(eventId);
             if (currentEvent == null || currentEvent.UserId.ToString() != userId)
@@ -321,8 +400,7 @@ namespace Sheca.Services
                     _mapper.Map(upE, currentEvent);
                     await _context.BulkSaveChangesAsync(cancellationToken);
                 }
-                else
-                if (upE.TargetType == TargetType.THIS)
+                else if (upE.TargetType == TargetType.THIS)
                 {
                     if (typeId == "CloneId")
                     {
@@ -365,60 +443,51 @@ namespace Sheca.Services
                     }
                     else
                     {
-                        if (upE.StartTime?.Date != currentEvent.StartTime.Date)
+                        var newEv = currentEvent.Clone();
+                        _mapper.Map(upE, newEv);
+                        newEv.Id = Guid.NewGuid();
+                        await _context.Events.AddAsync(newEv);
+
+                        if (currentEvent.Id == upE.Id)
                         {
-                            var newEv = currentEvent.Clone();
-                            _mapper.Map(upE, newEv);
-                            newEv.Id = Guid.NewGuid();
-                            await _context.Events.AddAsync(newEv);
+                            var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
 
-                            if (currentEvent.Id == upE.Id)
-                            {
-                                var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
-
-                                _context.Events.RemoveRange(events);
-                                _context.Events.Remove(currentEvent);
-                            }
-                            else
-                            {
-                                currentEvent.RecurringEnd = upE.StartTime?.Date;
-                            }
-
-
-                            await _context.BulkSaveChangesAsync(cancellationToken);
+                            _context.Events.RemoveRange(events);
+                            _context.Events.Remove(currentEvent);
                         }
                         else
                         {
-                            if (currentEvent.RecurringStart.HasValue)
+                            var recurringInterval = upE.RecurringInterval ?? currentEvent.RecurringInterval;
+                            if (recurringInterval.HasValue)
                             {
-                                currentEvent.RecurringEnd = upE.BeforeStartTime!.Value.AddSeconds(-1 * currentEvent?.RecurringInterval ?? 0);
-
-                                var newEvent = currentEvent!.Clone();
-                                _mapper.Map(upE, newEvent);
-                                await _context.Events.AddAsync(newEvent);
-                                await _context.BulkSaveChangesAsync(cancellationToken);
+                                currentEvent.RecurringEnd = upE.StartTime?.Date.AddSeconds(-1.0 * (double)recurringInterval);
                             }
                         }
+
+                        await _context.BulkSaveChangesAsync(cancellationToken);
                     }
                 }
                 return;
             }
 
-            var e = await _context.Events.FindAsync(upE.Id);
-            if (e == null || e.UserId.ToString() != userId)
-            {
-                throw new ApiException("Event not found", 404);
-            }
-
             if (upE.TargetType == TargetType.THIS)
             {
-                e.ExceptDates += (string.IsNullOrEmpty(e.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.StartTime!.Value.Ticks).TotalSeconds}";
+                var newEv = currentEvent.Clone();
+                newEv.Id = Guid.NewGuid();
+                if (currentEvent.RecurringInterval.HasValue)
+                {
+                    newEv.RecurringEnd = upE.StartTime?.Date.AddSeconds(1.0 * (double)currentEvent.RecurringInterval);
+                }
+                _mapper.Map(upE, currentEvent);
+                await _context.Events.AddAsync(newEv);
             }
             else
             {
-                _context.Events.Remove(e);
+                var listNotUsedEvents = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync(cancellationToken);
+                _context.Events.RemoveRange(listNotUsedEvents);
+                _mapper.Map(upE, currentEvent);
             }
-            await _context.SaveChangesAsync();
+            await _context.BulkSaveChangesAsync(cancellationToken);
         }
     }
 }

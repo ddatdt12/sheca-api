@@ -25,6 +25,8 @@ public class MapperProfile : Profile
         CreateMap<CreateEventDto, Event>().ForMember(e => e.RecurringDetails,
         opt => opt.MapFrom(cE => cE.RecurringDetails != null ? string.Join(";", cE.RecurringDetails.Select(rD => (int)rD)) : null));
         CreateMap<UpdateEventDto, Event>()
+        .ForMember(e => e.RecurringDetails,
+        opt => opt.MapFrom(cE => cE.RecurringDetails != null ? string.Join(";", cE.RecurringDetails.Select(rD => (int)rD)) : null))
         .ForMember(e => e.CloneEventId, item => item.Ignore()).ForMember(e => e.Id, item => item.Ignore())
         .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
