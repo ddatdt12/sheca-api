@@ -55,6 +55,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+RecurringJob.AddOrUpdate("easyjob", ( )=> app.Logger.LogInformation($"Test Schedule {DateTime.Now}"), "0 1 * * *");
 RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *");
 
 app.UseMiddleware<JwtMiddleware>();
