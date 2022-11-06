@@ -8,7 +8,7 @@ using static Sheca.Common.Enum;
 
 namespace Sheca.Services
 {
-    public class EventService : IEventService
+    public partial class EventService : IEventService
     {
         public readonly DataContext _context;
         private readonly IMapper _mapper;
@@ -197,42 +197,10 @@ namespace Sheca.Services
 
             return finalEvents.Where(e => e.StartTime >= fromDate && e.EndTime <= endDate).OrderBy(e => e.StartTime).ToList();
         }
-        private void UpdateDateTime(ref DateTime current, int value, RecurringUnit unit)
-        {
-            switch (unit)
-            {
-                case RecurringUnit.DAY:
-                    current = current.AddDays(value);
-                    break;
-                case RecurringUnit.WEEK:
-                    break;
-                case RecurringUnit.MONTH:
-                    current = current.AddMonths(value);
-                    break;
-                default:
-                    break;
-            }
-        }
+        
         Task<Event> IEventService.GetById(int Id, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
-        }
-
-        private DateTime AddTimeByUnit(RecurringUnit unit, DateTime date, int time)
-        {
-            switch (unit)
-            {
-                case RecurringUnit.DAY:
-                    return date.AddDays(time);
-                case RecurringUnit.MONTH:
-                    return date.AddMonths(time);
-                case RecurringUnit.WEEK:
-                    return date.AddDays(time * 7);
-                default:
-                    break;
-            }
-
-            return date;
         }
 
         async Task IEventService.Delete(string userId, DeleteEventDto dE, CancellationToken cancellationToken)
@@ -240,14 +208,14 @@ namespace Sheca.Services
             using var transaction = _context.Database.BeginTransaction();
             try
             {
-                if (!dE.CloneEventId.HasValue && !dE.Id.HasValue && !dE.BaseEventId.HasValue)
+                if (!dE.Id.HasValue && !dE.BaseEventId.HasValue)
                 {
                     throw new ApiException("Bad request", 400);
                 }
-                var eventId = dE.CloneEventId ?? dE.Id;
+                var eventId = dE.CloneEventId;
 
-                string typeId = dE.CloneEventId.HasValue ? "CloneId" : (dE.BaseEventId.HasValue ? "BaseId" : "Main");
-   
+
+                string typeId = "Clone";
 
                 var currentEvent = await _context.Events.FindAsync(eventId);
                 if (currentEvent == null || currentEvent.UserId.ToString() != userId)
@@ -255,7 +223,22 @@ namespace Sheca.Services
                     throw new ApiException("Event not exist!", 404);
                 }
 
-                if (dE.Id == dE.CloneEventId || dE.CloneEventId == currentEvent.Id)
+                //nếu như event không lặp thì xóa luôn
+                if (!currentEvent.RecurringStart.HasValue || !currentEvent.RecurringUnit.HasValue || !currentEvent.RecurringInterval.HasValue)
+                {
+                    _context.Remove(currentEvent);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return;
+                }
+
+                if (!IsValidEventDate((DateTime)currentEvent.RecurringStart!, dE.StartTime, (RecurringUnit)currentEvent.RecurringUnit, (int)currentEvent.RecurringInterval, currentEvent.RecurringDetails)
+                || (currentEvent.RecurringEnd.HasValue && dE.StartTime > currentEvent.RecurringEnd))
+                {
+                    throw new ApiException("Event not exist!", 404);
+                }
+
+                if (dE.Id == dE.CloneEventId)
                 {
                     typeId = "Main";
                 }
@@ -270,8 +253,15 @@ namespace Sheca.Services
                         }
                         else
                         {
-                            currentEvent.ExceptDates += (string.IsNullOrEmpty(currentEvent.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(dE.StartTime.Ticks).TotalSeconds}";
+                            var exceptDate = (string.IsNullOrEmpty(currentEvent.ExceptDates) ? "" : ";") + TimeSpan.FromTicks(dE.StartTime.Ticks).TotalSeconds;
+                            if (currentEvent.ExceptDates.Contains(exceptDate))
+                            {
+                                throw new ApiException("Event not exist!", 404);
+                            }
+
+                            currentEvent.ExceptDates += exceptDate;
                         }
+                        await _context.SaveChangesAsync();
                     }
                     else if (dE.TargetType == TargetType.THIS_AND_FOLLOWING)
                     {
@@ -284,6 +274,7 @@ namespace Sheca.Services
                         await _context.Events.Where(e => e.BaseEventId == eventId || e.Id == eventId).DeleteFromQueryAsync(cancellationToken);
                     }
 
+                    await transaction.CommitAsync();
                     return;
                 }
 
@@ -291,7 +282,7 @@ namespace Sheca.Services
                 //Trường hợp xóa đúng tk lưu trong DB
                 if (dE.TargetType == TargetType.THIS)
                 {
-                    var nextDateTime = AddTimeByUnit(currentEvent.RecurringUnit ?? RecurringUnit.DAY, dE.StartTime, -1 * (currentEvent.RecurringInterval ?? 0));
+                    var nextDateTime = AddTimeByUnit(currentEvent.RecurringUnit ?? RecurringUnit.DAY, dE.StartTime, (currentEvent.RecurringInterval ?? 0));
 
                     var existEvent = await _context.Events.Where(e => e.BaseEventId == eventId && nextDateTime == e.StartTime).FirstOrDefaultAsync();
 
@@ -327,34 +318,6 @@ namespace Sheca.Services
                 throw;
             }
         }
-
-        //private void UpdateStartTime(UpdateEventDto upE, Event originalEvent)
-        //{
-
-        //    if (!upE.StartTime.HasValue && upE.RecurringDetails == null & upE?.RecurringDetails?.Count == 0)
-        //    {
-
-        //    }
-        //    var startTime = upE?.StartTime ?? originalEvent.StartTime;
-        //    var endTime = upE?.EndTime ?? originalEvent.EndTime;
-
-        //    DateTime minNextDate = DateTime.MaxValue;
-        //    var timeSpan = endTime - startTime;
-        //    if (timeSpan.Ticks < 0)
-        //    {
-        //        throw new ApiException("End Time must greater than start time", 400);
-        //    }
-        //    foreach (var dOW in e.RecurringDetails)
-        //    {
-        //        var nextDOW = Utils.GetNextWeekday(e.StartTime, dOW);
-        //        if (nextDOW < minNextDate)
-        //        {
-        //            minNextDate = nextDOW;
-        //        }
-        //    }
-        //    e.StartTime = minNextDate;
-        //    e.EndTime = e.StartTime + timeSpan;
-        //}
 
         public async Task Update(UpdateEventDto upE, string userId, CancellationToken cancellationToken = default)
         {
