@@ -1,9 +1,10 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos.Settings;
 using Sheca.Extensions;
 using Sheca.Middlewares;
 using Sheca.Models;
-using System.Text.Json.Serialization;
+using Sheca.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 builder.Services.ConfigureAuthentication(builder.Configuration);
+builder.Services.AddHangFireService(builder.Configuration);
 
 builder.Services.AddDbContext<DataContext>(options =>
 {
@@ -37,6 +39,9 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseHangfireDashboard();
+
+BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -50,10 +55,13 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *");
+
 app.UseMiddleware<JwtMiddleware>();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
+    endpoints.MapHangfireDashboard();
 });
 
 app.Run();

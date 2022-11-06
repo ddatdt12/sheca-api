@@ -197,7 +197,148 @@ namespace Sheca.Services
 
             return finalEvents.Where(e => e.StartTime >= fromDate && e.EndTime <= endDate).OrderBy(e => e.StartTime).ToList();
         }
-        
+
+
+
+        async Task<IEnumerable<Event>> IEventService.Get(FilterEvent filter)
+        {
+            var query = _context.Events.AsQueryable();
+            var courseQuery = _context.Courses.AsQueryable();
+            DateTime fromDate = filter?.FromDate?.Date ?? DateTime.MinValue;
+            DateTime endDate = filter?.ToDate?.Date.AddDays(1) ?? fromDate.AddDays(365);
+            var duration = (endDate - fromDate).TotalSeconds;
+            var totalDays = (endDate - fromDate).TotalSeconds;
+            var totalWeeks = (endDate - fromDate).TotalDays / 7;
+            if (filter != null)
+            {
+                if (filter.FromDate.HasValue && filter.ToDate.HasValue)
+                {
+                    query = query.Where(e =>
+                    (e.StartTime.Date >= fromDate && e.StartTime.Date <= endDate)
+                    || (e.RecurringInterval != null && e.RecurringInterval != 0 && e.StartTime.Date < fromDate
+                    &&
+                   (e.RecurringStart < endDate && (!e.RecurringEnd.HasValue || e.RecurringEnd > fromDate))
+                    ));
+
+                    courseQuery = courseQuery.Where(e =>
+                    !(e.StartDate.Date > endDate && e.EndDate.Date < fromDate));
+                }
+                else
+                {
+                    if (filter.FromDate.HasValue)
+                    {
+                        query = query.Where(e => e.EndTime > fromDate);
+                        courseQuery = courseQuery.Where(e => e.StartDate >= fromDate);
+                    }
+                    if (filter.ToDate.HasValue)
+                    {
+                        query = query.Where(e => e.StartTime <= endDate);
+                    }
+                }
+            }
+
+            var listEvents = await query.ToListAsync();
+            var listCourses = await courseQuery.ToListAsync();
+            var finalEvents = new List<Event>();
+
+            listCourses.ForEach(c =>
+            {
+                var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
+                var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
+                var timeSpan = c.EndTime - c.StartTime;
+
+                //Tìm ngày hợp lệ gần nhất
+                foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                {
+                    var nextDate = Utils.GetNextWeekday(startDateTemp, day);
+                    while (nextDate < endDateTemp)
+                    {
+                        var startTime = nextDate.Date.AddSeconds(c.StartTime);
+                        finalEvents.Add(new Event
+                        {
+                            Id = Guid.NewGuid(),
+                            Title = c.Title,
+                            Description = c.Description,
+                            CourseId = c.Id,
+                            StartTime = startTime,
+                            EndTime = startTime.AddSeconds(timeSpan),
+                            NotiBeforeTime = c.NotiBeforeTime,
+                            ColorCode = c.ColorCode,
+                            UserId = c.UserId,
+                        });
+                        nextDate = nextDate.AddDays(7);
+                    }
+                }
+            });
+
+            listEvents.ForEach(e =>
+            {
+                if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
+                {
+                    var sameEvents = new List<Event>();
+                    var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
+                    var startDateTemp = (DateTime)e.RecurringStart > fromDate ? (DateTime)e.RecurringStart : fromDate;
+                    var endDateTemp = (e.RecurringEnd.HasValue && e.RecurringEnd < endDate) ? (DateTime)e.RecurringEnd : endDate;
+                    var timeSpan = e.EndTime - e.StartTime;
+
+                    //WEEK recurring
+                    if (e.RecurringUnit == RecurringUnit.WEEK && e.RecurringDetails != null)
+                    {
+                        List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
+                        foreach (var dayOfWeek in dayOfWeeksRecurrings)
+                        {
+                            startDateTemp = Utils.GetNextWeekday(startDateTemp, dayOfWeek);
+
+                            var recurringCount = Math.Ceiling((endDateTemp - startDateTemp).TotalDays / (7 * (int)e.RecurringInterval));
+                            for (int dI = 0; dI < recurringCount; dI++)
+                            {
+                                var duplicateE = e.Clone();
+                                duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
+                                duplicateE.Id = e.StartTime == duplicateE.StartTime ? e.Id : Guid.NewGuid();
+                                duplicateE.EndTime = duplicateE.StartTime + timeSpan;
+                                duplicateE.CloneEventId = e.Id;
+                                if (duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                                {
+                                    sameEvents.Add(duplicateE);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var consideredDate = e.StartTime;
+                        if (consideredDate < fromDate)
+                        {
+                            var times = (fromDate - consideredDate).TotalDays / (e.RecurringInterval.Value * (e.RecurringUnit == RecurringUnit.DAY ? 1 : 7));
+                            UpdateDateTime(ref consideredDate, (int)Math.Ceiling(times) * e.RecurringInterval.Value, (RecurringUnit)e.RecurringUnit!);
+                        }
+
+                        while (consideredDate <= endDateTemp)
+                        {
+                            var duplicateE = e.Clone();
+                            duplicateE.Id = Guid.NewGuid();
+                            duplicateE.StartTime = consideredDate;
+                            duplicateE.EndTime = consideredDate + timeSpan;
+                            duplicateE.CloneEventId = e.Id;
+                            if ((duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp) && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                            {
+                                sameEvents.Add(duplicateE);
+                            }
+
+                            UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!);
+                        }
+                    }
+                    finalEvents.AddRange(sameEvents);
+                }
+                else
+                {
+                    finalEvents.Add(e);
+                }
+            });
+
+
+            return finalEvents.Where(e => e.StartTime >= fromDate && e.EndTime <= endDate).OrderBy(e => e.StartTime).ToList();
+        }
         Task<Event> IEventService.GetById(int Id, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
@@ -452,5 +593,6 @@ namespace Sheca.Services
             }
             await _context.BulkSaveChangesAsync(cancellationToken);
         }
+
     }
 }
