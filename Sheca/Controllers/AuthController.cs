@@ -47,9 +47,9 @@ namespace Sheca.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(string email)
+        public async Task<IActionResult> ForgotPassword([FromBody] EmailUserDto user)
         {
-            await _auth.ForgotPassword(email);
+            await _auth.ForgotPassword(user.Email);
             return Ok(new ApiResponse<string>(string.Empty, "Please check the code in your email. This code consists of 4 numbers."));
         }
 
