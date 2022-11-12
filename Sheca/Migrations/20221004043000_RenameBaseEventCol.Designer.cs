@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sheca.Models;
 
@@ -11,9 +12,10 @@ using Sheca.Models;
 namespace Sheca.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221004043000_RenameBaseEventCol")]
+    partial class RenameBaseEventCol
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,10 +38,6 @@ namespace Sheca.Migrations
                     b.Property<string>("ColorCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DayOfWeeks")
-                        .IsRequired()
-                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -77,7 +75,7 @@ namespace Sheca.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Course", (string)null);
+                    b.ToTable("Course");
                 });
 
             modelBuilder.Entity("Sheca.Models.Event", b =>
@@ -93,6 +91,9 @@ namespace Sheca.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -107,9 +108,6 @@ namespace Sheca.Migrations
                     b.Property<int?>("NotiBeforeTime")
                         .HasColumnType("int");
 
-                    b.Property<string>("RecurringDetails")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("RecurringEnd")
                         .HasColumnType("datetime2");
 
@@ -118,9 +116,6 @@ namespace Sheca.Migrations
 
                     b.Property<DateTime?>("RecurringStart")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("RecurringUnit")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
@@ -136,9 +131,11 @@ namespace Sheca.Migrations
 
                     b.HasIndex("BaseEventId");
 
+                    b.HasIndex("CourseId");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Event", (string)null);
+                    b.ToTable("Event");
                 });
 
             modelBuilder.Entity("Sheca.Models.User", b =>
@@ -157,21 +154,7 @@ namespace Sheca.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("User", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("d0ee9b2a-71cd-4d32-a778-0461ca0f64ff"),
-                            Email = "test@gmail.com",
-                            Password = "123123123"
-                        },
-                        new
-                        {
-                            Id = new Guid("077f0ae7-b699-40a3-b22e-1f065705b8e3"),
-                            Email = "test2@gmail.com",
-                            Password = "123123123"
-                        });
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("Sheca.Models.Course", b =>
@@ -191,6 +174,10 @@ namespace Sheca.Migrations
                         .WithMany()
                         .HasForeignKey("BaseEventId");
 
+                    b.HasOne("Sheca.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId");
+
                     b.HasOne("Sheca.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -198,6 +185,8 @@ namespace Sheca.Migrations
                         .IsRequired();
 
                     b.Navigation("BaseEvent");
+
+                    b.Navigation("Course");
 
                     b.Navigation("User");
                 });

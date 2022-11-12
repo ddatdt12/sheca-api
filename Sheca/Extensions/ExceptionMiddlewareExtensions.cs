@@ -18,7 +18,7 @@ namespace Sheca.Extensions
                         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                         context.Response.ContentType = "application/json";
 
-                        if (contextFeature != null)
+                            if (contextFeature != null)
                         {
                             logger.LogError($"Something went wrong: {contextFeature.Error}");
 
@@ -35,6 +35,12 @@ namespace Sheca.Extensions
                             {
                                 message = updateErr?.InnerException?.Message ?? updateErr?.Message ?? "";
                             }
+
+                            if (contextFeature?.Error?.InnerException != null)
+                            {
+                                message = contextFeature?.Error?.InnerException.Message ?? "";
+                            }
+
 
                             Exception errorRes = new ApiException(message, statusCode: context.Response.StatusCode);
                             await context.Response.WriteAsync(errorRes.ToString());

@@ -6,11 +6,11 @@ namespace Sheca.Dtos
     {
         public Guid Id { get; set; }
         public string Email { get; set; }
-        public string token { get; set; }
+        public string Token { get; set; }
         public UserDto()
         {
             Email = string.Empty;
-            token = string.Empty;
+            Token = string.Empty;
         }
     }
 }

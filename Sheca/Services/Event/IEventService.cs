@@ -5,9 +5,11 @@ namespace Sheca.Services
 {
     public interface IEventService
     {
-        Task<IEnumerable<Event>> Get(string userId, FilterEvent filter);
-        Task<Event> GetById(int Id);
-        Task<Event> Create(CreateEventDto e, string userId);
-        Task Delete(Guid id, string userId);
+        Task<IEnumerable<Event>> Get(string userId, FilterEvent filter, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Event>> Get(FilterEvent filter);
+        Task<Event> GetById(int Id, CancellationToken cancellationToken = default);
+        Task<Event> Create(CreateEventDto e, string userId,CancellationToken cancellationToken = default);
+        Task Update(UpdateEventDto e, string userId, CancellationToken cancellationToken = default);
+        Task Delete(string userId, DeleteEventDto dE, CancellationToken cancellationToken = default);
     }
 }

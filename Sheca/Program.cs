@@ -1,20 +1,17 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos.Settings;
 using Sheca.Extensions;
 using Sheca.Middlewares;
 using Sheca.Models;
-using System.Text.Json.Serialization;
+using Sheca.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.ConfigureCors();
 
 // Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(x =>
-{
-    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+builder.Services.AddControllers().AddCustomOptions();
 
 builder.Services.AddSignalR();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -22,10 +19,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.ConfigureSwaggerOptions();
+    c.EnableAnnotations();
 });
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 builder.Services.ConfigureAuthentication(builder.Configuration);
+builder.Services.AddHangFireService(builder.Configuration);
 
 builder.Services.AddDbContext<DataContext>(options =>
 {
@@ -40,6 +39,9 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseHangfireDashboard();
+
+BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -53,10 +55,14 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+RecurringJob.AddOrUpdate("easyjob", ( )=> Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *");
+RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *");
+
 app.UseMiddleware<JwtMiddleware>();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
+    endpoints.MapHangfireDashboard();
 });
 
 app.Run();
