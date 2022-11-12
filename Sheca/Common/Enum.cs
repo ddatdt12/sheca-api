@@ -9,7 +9,7 @@ namespace Sheca.Common
         {
             Created,
             Doing,
-            Delivered,  
+            Delivered,
             Completed,
             Cancelled,
         }
@@ -28,6 +28,15 @@ namespace Sheca.Common
             DAY = 1,
             WEEK = 2,
             MONTH = 3,
+        }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum NotificationUnit
+        {
+            MINUTE = 1,
+            HOUR = 2,
+            DAY = 3,
+            WEEK = 4,
         }
     }
 }

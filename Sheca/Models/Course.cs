@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using static Sheca.Common.Enum;
 
 namespace Sheca.Models
 {
@@ -27,6 +28,7 @@ namespace Sheca.Models
         public DateTime EndDate { get; set; }
         public int NumOfLessons { get; set; }
         public int? NotiBeforeTime { get; set; }
+        public NotificationUnit? NotiUnit { get; set; }
         public string ColorCode { get; set; }
         public Guid UserId { get; set; }
         public User? User{ get; set; }

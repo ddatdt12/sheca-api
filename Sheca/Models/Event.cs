@@ -27,6 +27,7 @@ namespace Sheca.Models
         public string ColorCode { get; set; }
         //minutes
         public int? NotiBeforeTime { get; set; }
+        public NotificationUnit? NotiUnit { get; set; }
         public Guid? BaseEventId { get; set; }
         public Event? BaseEvent { get; set; }
         [NotMapped]
