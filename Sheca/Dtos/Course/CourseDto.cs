@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Sheca.Attributes;
+using System.ComponentModel.DataAnnotations;
+using static Sheca.Common.Enum;
 
 namespace Sheca.Dtos
 {
@@ -25,5 +27,8 @@ namespace Sheca.Dtos
         public DateTime EndDate { get; set; }
         public int NumOfLessons { get; set; }
         public string? ColorCode { get; set; }
+        [SameExist("NotiUnit", ErrorMessage = "NotiBeforeTime and NotiUnit must exist in same time")]
+        public int? NotiBeforeTime { get; set; }
+        public NotificationUnit? NotiUnit { get; set; }
     }
 }

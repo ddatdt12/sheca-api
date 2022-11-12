@@ -21,12 +21,16 @@ namespace Sheca.Dtos
         public DateTime EndTime { get; set; }
         public string ColorCode { get; set; }
         //minutes
-        public int? NotiBeforeTime { get; set; }
         public Guid? BaseEventId { get; set; }
         public Guid? CloneEventId { get; set; }
         public int? CourseId { get; set; }
         public CourseDto? Course { get; set; }
         public Guid UserId { get; set; }
+
+        [SameExist("NotiUnit", ErrorMessage = "NotiBeforeTime and NotiUnit must exist in same time")]
+        public int? NotiBeforeTime { get; set; }     //minutes
+        public NotificationUnit? NotiUnit { get; set; }
+        
         public UserDto? User { get; set; }
 
         [SameExist("RecurringInterval", ErrorMessage = "RecurringStart and RecurringType must exist in same time")]
