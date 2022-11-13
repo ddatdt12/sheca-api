@@ -56,7 +56,9 @@ namespace Sheca.Services
 
             return @event;
         }
+        //private void HandleFilterDate<T>(IQueryable<T> query , DateTime fromDate, DateTime){
 
+        //}
         async Task<IEnumerable<Event>> IEventService.Get(string userId, FilterEvent filter, CancellationToken cT)
         {
             var guidUserId = new Guid(userId);
@@ -67,6 +69,7 @@ namespace Sheca.Services
             var duration = (endDate - fromDate).TotalSeconds;
             var totalDays = (endDate - fromDate).TotalSeconds;
             var totalWeeks = (endDate - fromDate).TotalDays / 7;
+
             if (filter != null)
             {
                 if (filter.FromDate.HasValue && filter.ToDate.HasValue)
@@ -95,109 +98,114 @@ namespace Sheca.Services
                 }
             }
 
-            var listEvents = await query.ToListAsync(cT);
-            var listCourses = await courseQuery.ToListAsync(cT);
             var finalEvents = new List<Event>();
 
-            listCourses.ForEach(c =>
+            if (filter?.Type != TypeQuery.EVENT)
             {
-                var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
-                var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
-                var timeSpan = c.EndTime - c.StartTime;
-
-                //Tìm ngày hợp lệ gần nhất
-                foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                var listCourses = await courseQuery.ToListAsync(cT);
+                listCourses.ForEach(c =>
                 {
-                    var nextDate = Utils.GetNextWeekday(startDateTemp, day);
-                    while (nextDate < endDateTemp)
+                    var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
+                    var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
+                    var timeSpan = c.EndTime - c.StartTime;
+
+                    //Tìm ngày hợp lệ gần nhất
+                    foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
                     {
-                        var startTime = nextDate.Date.AddSeconds(c.StartTime);
-                        finalEvents.Add(new Event
+                        var nextDate = Utils.GetNextWeekday(startDateTemp, day);
+                        while (nextDate < endDateTemp)
                         {
-                            Id = Guid.NewGuid(),
-                            Title = c.Title,
-                            Description = c.Description,
-                            CourseId = c.Id,
-                            StartTime = startTime,
-                            EndTime = startTime.AddSeconds(timeSpan),
-                            NotiBeforeTime = c.NotiBeforeTime,
-                            ColorCode = c.ColorCode,
-                            UserId = c.UserId,
-                        });
-                        nextDate = nextDate.AddDays(7);
-                    }
-                }
-            });
-
-            listEvents.ForEach(e =>
-            {
-                if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
-                {
-                    var sameEvents = new List<Event>();
-                    var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
-                    var startDateTemp = (DateTime)e.RecurringStart > fromDate ? (DateTime)e.RecurringStart : fromDate;
-                    var endDateTemp = (e.RecurringEnd.HasValue && e.RecurringEnd < endDate) ? (DateTime)e.RecurringEnd : endDate;
-                    var timeSpan = e.EndTime - e.StartTime;
-
-                    //WEEK recurring
-                    if (e.RecurringUnit == RecurringUnit.WEEK && e.RecurringDetails != null)
-                    {
-                        List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
-                        foreach (var dayOfWeek in dayOfWeeksRecurrings)
-                        {
-                            startDateTemp = Utils.GetNextWeekday(startDateTemp, dayOfWeek);
-
-                            var recurringCount = Math.Ceiling((endDateTemp - startDateTemp).TotalDays / (7 * (int)e.RecurringInterval));
-                            for (int dI = 0; dI < recurringCount; dI++)
+                            var startTime = nextDate.Date.AddSeconds(c.StartTime);
+                            finalEvents.Add(new Event
                             {
-                                var duplicateE = e.Clone();
-                                duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
-                                duplicateE.Id = e.StartTime == duplicateE.StartTime ? e.Id : Guid.NewGuid();
-                                duplicateE.EndTime = duplicateE.StartTime + timeSpan;
-                                duplicateE.CloneEventId = e.Id;
-                                if (duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                                Id = Guid.NewGuid(),
+                                Title = c.Title,
+                                Description = c.Description,
+                                CourseId = c.Id,
+                                StartTime = startTime,
+                                EndTime = startTime.AddSeconds(timeSpan),
+                                NotiBeforeTime = c.NotiBeforeTime,
+                                ColorCode = c.ColorCode,
+                                UserId = c.UserId,
+                            });
+                            nextDate = nextDate.AddDays(7);
+                        }
+                    }
+                });
+            }
+
+            if (filter?.Type != TypeQuery.COURSE)
+            {
+                var listEvents = await query.ToListAsync(cT);
+
+                listEvents.ForEach(e =>
+                {
+                    if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
+                    {
+                        var sameEvents = new List<Event>();
+                        var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
+                        var startDateTemp = (DateTime)e.RecurringStart > fromDate ? (DateTime)e.RecurringStart : fromDate;
+                        var endDateTemp = (e.RecurringEnd.HasValue && e.RecurringEnd < endDate) ? (DateTime)e.RecurringEnd : endDate;
+                        var timeSpan = e.EndTime - e.StartTime;
+
+                        //WEEK recurring
+                        if (e.RecurringUnit == RecurringUnit.WEEK && e.RecurringDetails != null)
+                        {
+                            List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
+                            foreach (var dayOfWeek in dayOfWeeksRecurrings)
+                            {
+                                startDateTemp = Utils.GetNextWeekday(startDateTemp, dayOfWeek);
+
+                                var recurringCount = Math.Ceiling((endDateTemp - startDateTemp).TotalDays / (7 * (int)e.RecurringInterval));
+                                for (int dI = 0; dI < recurringCount; dI++)
                                 {
-                                    sameEvents.Add(duplicateE);
+                                    var duplicateE = e.Clone();
+                                    duplicateE.StartTime = Utils.GetNextWeekday(startDateTemp, dayOfWeek).AddDays(7 * (int)e.RecurringInterval * dI);
+                                    duplicateE.Id = e.StartTime == duplicateE.StartTime ? e.Id : Guid.NewGuid();
+                                    duplicateE.EndTime = duplicateE.StartTime + timeSpan;
+                                    duplicateE.CloneEventId = e.Id;
+                                    if (duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                                    {
+                                        sameEvents.Add(duplicateE);
+                                    }
                                 }
                             }
                         }
+                        else
+                        {
+                            var consideredDate = e.StartTime;
+                            if (consideredDate < fromDate)
+                            {
+                                var times = (fromDate - consideredDate).TotalDays / (e.RecurringInterval.Value * (e.RecurringUnit == RecurringUnit.DAY ? 1 : 7));
+                                UpdateDateTime(ref consideredDate, (int)Math.Ceiling(times) * e.RecurringInterval.Value, (RecurringUnit)e.RecurringUnit!);
+                            }
+
+                            while (consideredDate <= endDateTemp)
+                            {
+                                var duplicateE = e.Clone();
+                                duplicateE.Id = Guid.NewGuid();
+                                duplicateE.StartTime = consideredDate;
+                                duplicateE.EndTime = consideredDate + timeSpan;
+                                duplicateE.CloneEventId = e.Id;
+                                if ((duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp) && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
+                                {
+                                    sameEvents.Add(duplicateE);
+                                }
+
+                                UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!);
+                            }
+                        }
+                        finalEvents.AddRange(sameEvents);
                     }
                     else
                     {
-                        var consideredDate = e.StartTime;
-                        if (consideredDate < fromDate)
-                        {
-                            var times = (fromDate - consideredDate).TotalDays / (e.RecurringInterval.Value * (e.RecurringUnit == RecurringUnit.DAY ? 1 : 7));
-                            UpdateDateTime(ref consideredDate, (int)Math.Ceiling(times) * e.RecurringInterval.Value, (RecurringUnit)e.RecurringUnit!);
-                        }
-
-                        while (consideredDate <= endDateTemp)
-                        {
-                            var duplicateE = e.Clone();
-                            duplicateE.Id = Guid.NewGuid();
-                            duplicateE.StartTime = consideredDate;
-                            duplicateE.EndTime = consideredDate + timeSpan;
-                            duplicateE.CloneEventId = e.Id;
-                            if ((duplicateE.StartTime >= startDateTemp && duplicateE.EndTime <= endDateTemp) && !removedEvents.ContainsKey(TimeSpan.FromTicks(duplicateE.StartTime.Ticks).TotalSeconds.ToString()))
-                            {
-                                sameEvents.Add(duplicateE);
-                            }
-
-                            UpdateDateTime(ref consideredDate, (int)e.RecurringInterval, (RecurringUnit)e.RecurringUnit!);
-                        }
+                        finalEvents.Add(e);
                     }
-                    finalEvents.AddRange(sameEvents);
-                }
-                else
-                {
-                    finalEvents.Add(e);
-                }
-            });
-
+                });
+            }
 
             return finalEvents.Where(e => e.StartTime >= fromDate && e.EndTime <= endDate).OrderBy(e => e.StartTime).ToList();
         }
-
 
 
         async Task<IEnumerable<Event>> IEventService.Get(FilterEvent filter)
@@ -533,43 +541,36 @@ namespace Sheca.Services
                         throw new ApiException("Please provide start time of this event", 400);
                     }
 
-                    if (!upE.StartTime.HasValue || upE.StartTime?.Date == upE.BeforeStartTime?.Date)
+                    var newEv = currentEvent.Clone();
+                    _mapper.Map(upE, newEv);
+                    newEv.Id = Guid.NewGuid();
+                    newEv.RecurringStart = newEv.StartTime;
+                    _mapper.Map(upE, newEv);
+
+                    if (!upE.HasRecurringChanged() || (!upE.StartTime.HasValue || upE.StartTime?.Date == upE.BeforeStartTime?.Date))
                     {
-                        var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
-
-                        _mapper.Map(upE, currentEvent);
-                        foreach (var @event in events)
-                        {
-                            _mapper.Map(upE, @event);
-                        }
-
-                        await _context.BulkSaveChangesAsync();
+                        newEv.BaseEventId = newEv.Id;
                     }
-                    else
+
+
+                    await _context.Events.AddAsync(newEv);
+
+                    var events = await _context.Events.Where(e => e.BaseEventId == eventId && e.StartTime >= upE.BeforeStartTime).ToListAsync();
+
+                    _context.Events.RemoveRange(events);
+                    var recurringInterval = upE.RecurringInterval ?? currentEvent.RecurringInterval;
+                    if (recurringInterval.HasValue)
                     {
-                        var newEv = currentEvent.Clone();
-                        _mapper.Map(upE, newEv);
-                        newEv.Id = Guid.NewGuid();
-                        await _context.Events.AddAsync(newEv);
-
-                        if (currentEvent.Id == upE.Id)
-                        {
-                            var events = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync();
-
-                            _context.Events.RemoveRange(events);
-                            _context.Events.Remove(currentEvent);
-                        }
-                        else
-                        {
-                            var recurringInterval = upE.RecurringInterval ?? currentEvent.RecurringInterval;
-                            if (recurringInterval.HasValue)
-                            {
-                                currentEvent.RecurringEnd = upE.StartTime?.Date.AddSeconds(-1.0 * (double)recurringInterval);
-                            }
-                        }
-
-                        await _context.BulkSaveChangesAsync(cancellationToken);
+                        currentEvent.RecurringEnd = upE.BeforeStartTime?.Date.AddSeconds(-1.0 * (double)recurringInterval);
                     }
+
+                    if (currentEvent.Id == upE.Id)
+                    {
+                        _context.Events.RemoveRange(events);
+                        _context.Events.Remove(currentEvent);
+                    }
+
+                    await _context.BulkSaveChangesAsync(cancellationToken);
                 }
                 return;
             }
@@ -580,7 +581,7 @@ namespace Sheca.Services
                 newEv.Id = Guid.NewGuid();
                 if (currentEvent.RecurringInterval.HasValue)
                 {
-                    newEv.RecurringEnd = upE.StartTime?.Date.AddSeconds(1.0 * (double)currentEvent.RecurringInterval);
+                    newEv.RecurringEnd = upE.BeforeStartTime?.Date.AddSeconds(1.0 * (double)currentEvent.RecurringInterval);
                 }
                 _mapper.Map(upE, currentEvent);
                 await _context.Events.AddAsync(newEv);
