@@ -38,5 +38,13 @@ namespace Sheca.Common
             DAY = 3,
             WEEK = 4,
         }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum TypeQuery
+        {
+            EVENT = 1,
+            COURSE = 2,
+            ALL = 3,
+        }
     }
 }
