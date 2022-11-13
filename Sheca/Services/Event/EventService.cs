@@ -108,6 +108,7 @@ namespace Sheca.Services
                     var startDateTemp = c.StartDate > fromDate ? c.StartDate : fromDate;
                     var endDateTemp = c.EndDate < endDate ? c.EndDate : endDate;
                     var timeSpan = c.EndTime - c.StartTime;
+                    var dayoffs = c.GetOffDaysList();
 
                     //Tìm ngày hợp lệ gần nhất
                     foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
@@ -116,18 +117,23 @@ namespace Sheca.Services
                         while (nextDate < endDateTemp)
                         {
                             var startTime = nextDate.Date.AddSeconds(c.StartTime);
-                            finalEvents.Add(new Event
+
+                            if (!dayoffs.Contains(startTime))
                             {
-                                Id = Guid.NewGuid(),
-                                Title = c.Title,
-                                Description = c.Description,
-                                CourseId = c.Id,
-                                StartTime = startTime,
-                                EndTime = startTime.AddSeconds(timeSpan),
-                                NotiBeforeTime = c.NotiBeforeTime,
-                                ColorCode = c.ColorCode,
-                                UserId = c.UserId,
-                            });
+                                finalEvents.Add(new Event
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Title = c.Title,
+                                    Description = c.Description,
+                                    CourseId = c.Id,
+                                    StartTime = startTime,
+                                    EndTime = startTime.AddSeconds(timeSpan),
+                                    NotiBeforeTime = c.NotiBeforeTime,
+                                    ColorCode = c.ColorCode,
+                                    UserId = c.UserId,
+                                });
+                            }
+                           
                             nextDate = nextDate.AddDays(7);
                         }
                     }

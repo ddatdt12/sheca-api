@@ -59,5 +59,14 @@ namespace Sheca.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id}/day-off")]
+        [Produces(typeof(NoContentResult))]
+        public async Task<IActionResult> UpdateDayOffOfCourse(int id, [FromBody] PostCourseDateOffDto courseDateOffDto)
+        {
+            var userId = HttpContext.Items["UserId"] as string;
+            await _courseService.UpdateDayOff(id, new Guid(userId!), courseDateOffDto);
+            return NoContent();
+        }
+
     }
 }

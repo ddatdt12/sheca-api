@@ -29,6 +29,7 @@ namespace Sheca.Dtos
         public string? ColorCode { get; set; }
         [SameExist("NotiUnit", ErrorMessage = "NotiBeforeTime and NotiUnit must exist in same time")]
         public int? NotiBeforeTime { get; set; }
+        public List<DateTime> DayOffs { get; set; } = new List<DateTime>();
         public NotificationUnit? NotiUnit { get; set; }
     }
 }
