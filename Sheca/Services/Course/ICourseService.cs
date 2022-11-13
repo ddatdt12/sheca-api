@@ -9,5 +9,6 @@ namespace Sheca.Services
         public Task<Course> Create(CreateCourseDto c, Guid userId);
         public Task<Course> Update(int id, UpdateCourseDto ev, Guid userId);
         public Task Delete(int id, Guid userId);
+        public Task UpdateDayOff(int id, Guid userId, PostCourseDateOffDto dto);
     }
 }

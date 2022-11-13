@@ -110,5 +110,58 @@ namespace Sheca.Services
                 throw;
             }
         }
+
+        private bool IsValidCourseTask(Course course, DateTime date)
+        {
+            var dateTemp = date.Date.AddSeconds(course.StartTime);
+            if (date < course.StartDate || date > course.EndDate || !(course.GetDayOfWeeks().Contains(date.DayOfWeek) && dateTemp == date))
+            {
+                return false;
+            }
+
+            return true;
+        }
+        public async Task UpdateDayOff(int id, Guid userId, PostCourseDateOffDto dto)
+        {
+
+            var course = await _context.Courses.FindAsync(id);
+            if (course is null || course.UserId != userId)
+            {
+                throw new ApiException("Course not found", 404);
+            }
+
+            if (!IsValidCourseTask(course, dto.Date))
+            {
+                throw new ApiException("Invalid course date", 400);
+            }
+            var dayoffs = course.GetOffDaysList();
+            switch (dto.Action)
+            {
+                case Common.Enum.DayOffAction.Create:
+                    {
+                        if (dayoffs.Contains(dto.Date))
+                        {
+                            throw new ApiException("This Date was day-off", 400);
+                        }
+                        dayoffs.Add(dto.Date);
+                    }
+                    break;
+                case Common.Enum.DayOffAction.Delete:
+                    {
+                        if (!dayoffs.Contains(dto.Date))
+                        {
+                            throw new ApiException("This date does not exist", 400);
+                        }
+                        dayoffs.Remove(dto.Date);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            course.OffDays = string.Join(";", dayoffs);
+            await _context.SaveChangesAsync();
+
+        }
     }
 }

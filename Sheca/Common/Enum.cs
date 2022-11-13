@@ -46,5 +46,12 @@ namespace Sheca.Common
             COURSE = 2,
             ALL = 3,
         }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum DayOffAction
+        {
+            Create = 1,
+            Delete = 2,
+        }
     }
 }

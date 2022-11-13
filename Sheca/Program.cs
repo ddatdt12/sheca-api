@@ -55,7 +55,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-RecurringJob.AddOrUpdate("easyjob", ( )=> Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *");
+RecurringJob.AddOrUpdate("easyjob", ( )=> Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *",
+    TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
 //RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *");
 
 app.UseMiddleware<JwtMiddleware>();

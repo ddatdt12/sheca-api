@@ -34,8 +34,14 @@ namespace Sheca.Models
         public Guid UserId { get; set; }
         public User? User { get; set; }
 
-        public List<DateTime> GetOffDaysList(){
-            var offDays = OffDays.Split(";").Where(d => string.IsNullOrEmpty(d)).Select(d => new DateTime(long.Parse(d)));
+        public List<DateTime> GetOffDaysList()
+        {
+            var offDays = OffDays.Split(";").Where(d => !string.IsNullOrEmpty(d)).Select(d => DateTime.Parse(d));
+            return offDays.ToList();
+        }
+        public List<DayOfWeek> GetDayOfWeeks()
+        {
+            var offDays = DayOfWeeks.Split(";").Where(d => !string.IsNullOrEmpty(d)).Select(d => (DayOfWeek)(int.Parse(d)));
             return offDays.ToList();
         }
     }
