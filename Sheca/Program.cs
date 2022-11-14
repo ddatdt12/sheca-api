@@ -55,9 +55,9 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-RecurringJob.AddOrUpdate("easyjob", ( )=> Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *",
-    TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
-//RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *");
+var vnTimezone = TimeZoneInfo.FindSystemTimeZoneById("Indochina Time");
+RecurringJob.AddOrUpdate("easyjob", () => Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *",);
+RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *", vnTimezone);
 
 app.UseMiddleware<JwtMiddleware>();
 app.UseEndpoints(endpoints =>
