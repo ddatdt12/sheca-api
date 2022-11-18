@@ -55,8 +55,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var vnTimezone = TimeZoneInfo.FindSystemTimeZoneById("Indochina Time");
-RecurringJob.AddOrUpdate("easyjob", () => Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *",);
+var vnTimezone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+RecurringJob.AddOrUpdate("easyjob", () => Console.WriteLine($"Test Schedule {DateTime.Now}"), "*/1 * * * *");
 RecurringJob.AddOrUpdate<EmailJob>(emailJob => emailJob.SendEmail(), "55 23 * * *", vnTimezone);
 
 app.UseMiddleware<JwtMiddleware>();

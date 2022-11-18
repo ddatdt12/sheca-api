@@ -13,7 +13,7 @@ namespace Sheca.Attributes
 
         public override bool IsValid(object? value)
         {
-            return value != null && (int)value <= _minValue;
+            return value == null || (int)value >= _minValue;
         }
     }
 }

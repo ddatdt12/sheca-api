@@ -19,6 +19,7 @@ namespace Sheca.Dtos
         public int? NotiBeforeTime { get; set; }     //minutes
         public NotificationUnit? NotiUnit { get; set; }
         public DateTime? RecurringStart { get; set; }
+        [MinValue(1)]
         public int? RecurringInterval { get; set; }
         public RecurringUnit? RecurringUnit { get; set; }
         public List<DayOfWeek>? RecurringDetails { get; set; }

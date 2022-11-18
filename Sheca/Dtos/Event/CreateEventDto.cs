@@ -24,8 +24,10 @@ namespace Sheca.Dtos
         public int? NotiBeforeTime { get; set; }     //minutes
         public NotificationUnit? NotiUnit { get; set; }
 
+        [MinValue(1)]
         [SameExist("RecurringUnit", ErrorMessage = "RecurringUnit and RecurringInterval must exist in same time")]
         public int? RecurringInterval { get; set; }
+
         public RecurringUnit? RecurringUnit { get; set; }
         public List<DayOfWeek>? RecurringDetails { get; set; }
         public DateTime? RecurringEnd { get; set; }
