@@ -133,7 +133,7 @@ namespace Sheca.Services
                                     UserId = c.UserId,
                                 });
                             }
-                           
+
                             nextDate = nextDate.AddDays(7);
                         }
                     }
@@ -524,7 +524,13 @@ namespace Sheca.Services
                     {
                         if (upE.StartTime.HasValue && upE.StartTime != currentEvent.StartTime && upE.EndTime != currentEvent.EndTime)
                         {
-                            currentEvent.ExceptDates += (string.IsNullOrEmpty(currentEvent.ExceptDates) ? "" : ";") + $"{TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds}";
+                            var exceptDates = currentEvent.ExceptDates.Split(";").ToList();
+                            var newExceptDate = TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds.ToString();
+                            if (!exceptDates.Contains(newExceptDate))
+                            {
+                                exceptDates.Add(newExceptDate);
+                                currentEvent.ExceptDates = string.Join(";", exceptDates);
+                            }
                         }
 
                         var newEv = currentEvent.Clone();

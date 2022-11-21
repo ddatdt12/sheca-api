@@ -78,7 +78,7 @@ namespace Sheca.Services
 
                         course.NumOfLessons = learnDay * course.NumOfLessonsPerDay * dayOfWeeks;
                     }
-                    else if (upCourse.NumOfLessons.HasValue)
+                     if (upCourse.NumOfLessons.HasValue)
                     {
                         learnDay = (int)Math.Round(course.NumOfLessons * 1.0 / (course.NumOfLessonsPerDay * dayOfWeeks)) + 1;
                         course.EndDate = course.StartDate.AddDays((learnDay - 1) * 7);

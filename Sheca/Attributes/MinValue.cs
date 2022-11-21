@@ -6,9 +6,9 @@ namespace Sheca.Attributes
     {
         private readonly int _minValue;
 
-        public MinValue(int maxValue)
+        public MinValue(int minValue)
         {
-            _minValue = maxValue;
+            _minValue = minValue;
         }
 
         public override bool IsValid(object? value)
