@@ -172,8 +172,9 @@ namespace Sheca.Services
                         {
                             date = startDate;
                         }
-                        else
+                        else if (dayOfWeeks.Count > 1)
                         {
+                            //Tránh trường hợp lặp lại 1 ngày nếu như 1 tuần chỉ học 1 buổi
                             for (int i = 1; i < learnDay; i++)
                             {
                                 minDayIndex++;
@@ -184,6 +185,10 @@ namespace Sheca.Services
                                 date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
                             }
                         }
+                        else
+                        {
+                            date = date.AddDays(7 * learnDay);
+                        }
 
                         course.EndDate = date;
                         //course.EndType = course.StartDate.AddDays((learnDay - 1) * 7);
@@ -192,15 +197,26 @@ namespace Sheca.Services
                     {
                         int numberOfLessons = 1;
 
-                        while (date < endDate)
+                        if (dayOfWeeks.Count > 1)
                         {
-                            minDayIndex++;
-                            numberOfLessons++;
-                            if (minDayIndex >= dayOfWeeks.Count)
+                            while (date < endDate)
                             {
-                                minDayIndex = 0;
+                                minDayIndex++;
+                                numberOfLessons++;
+                                if (minDayIndex >= dayOfWeeks.Count)
+                                {
+                                    minDayIndex = 0;
+                                }
+                                date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
                             }
-                            date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
+                        }
+                        else
+                        {
+                            while (date < endDate)
+                            {
+                                numberOfLessons++;
+                                date = date.AddDays(7);
+                            }
                         }
 
                         course.NumOfLessons = numberOfLessons * course.NumOfLessonsPerDay;
