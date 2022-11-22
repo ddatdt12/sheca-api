@@ -55,7 +55,7 @@ namespace Sheca.Common
         }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public enum LessonType
+        public enum EndDateCourseType
         {
             EndDate = 1,
             NumberOfLessons = 2,

@@ -27,6 +27,7 @@ namespace Sheca.Models
         [Column(TypeName = "date")]
         public DateTime EndDate { get; set; }
         public int NumOfLessons { get; set; }
+        public EndDateCourseType EndType { get; set; }
         public int? NotiBeforeTime { get; set; }
         public NotificationUnit? NotiUnit { get; set; }
         public string ColorCode { get; set; }

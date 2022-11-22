@@ -22,7 +22,7 @@ namespace Sheca.Dtos
         [Range(0, 86400, ErrorMessage = "EndTime is between 0 - 86400")]
         public int EndTime { get; set; }
         public int NumOfLessonsPerDay { get; set; }
-        public List<DayOfWeek> DayOfWeeks{ get; set; } = new List<DayOfWeek>();
+        public List<DayOfWeek> DayOfWeeks { get; set; } = new List<DayOfWeek>();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int NumOfLessons { get; set; }
@@ -31,5 +31,10 @@ namespace Sheca.Dtos
         public int? NotiBeforeTime { get; set; }
         public List<DateTime> DayOffs { get; set; } = new List<DateTime>();
         public NotificationUnit? NotiUnit { get; set; }
+
+        public EndDateCourseType EndType
+        {
+            get; set;
+        }
     }
 }
