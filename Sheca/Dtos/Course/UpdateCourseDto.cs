@@ -24,5 +24,21 @@ namespace Sheca.Dtos
         public int? NotiBeforeTime { get; set; }
         public NotificationUnit? NotiUnit { get; set; }
         public string? ColorCode { get; set; }
+        public EndDateCourseType? UpdateEndType
+        {
+            get
+            {
+                if (EndDate.HasValue)
+                {
+                    return EndDateCourseType.EndDate;
+                }
+
+                if (NumOfLessons.HasValue)
+                {
+                    return EndDateCourseType.NumberOfLessons;
+                }
+                return null;
+            }
+        }
     }
 }
