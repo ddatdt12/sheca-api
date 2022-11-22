@@ -44,9 +44,30 @@ namespace Sheca.Models
         public DateTime? RecurringEnd { get; set; }
         public string ExceptDates { get; set; }
 
+        public List<DayOfWeek> GetRecurringDetails()
+        {
+            return RecurringDetails?.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList() ?? new List<DayOfWeek>();
+        }
+        public List<string> GetExceptDates()
+        {
+            var exceptDates = ExceptDates.Split(";").Where(d => !string.IsNullOrEmpty(d)).ToList();
+            return exceptDates;
+        }
         public Event Clone()
         {
-            return (Event)MemberwiseClone();
+            var clone = (Event)MemberwiseClone();
+            return clone;
+        }
+        public Event SimpleClone()
+        {
+            var clone = (Event)MemberwiseClone();
+            clone.ExceptDates = "";
+            clone.RecurringInterval = null;
+            clone.RecurringDetails = null;
+            clone.RecurringUnit  = null;
+            clone.RecurringStart = null;
+            clone.RecurringEnd = null;
+            return clone;
         }
     }
 
