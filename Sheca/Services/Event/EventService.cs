@@ -111,7 +111,7 @@ namespace Sheca.Services
                     var dayoffs = c.GetOffDaysList();
 
                     //Tìm ngày hợp lệ gần nhất
-                    foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                    foreach (var day in c.GetDayOfWeeks())
                     {
                         var nextDate = Utils.GetNextWeekday(startDateTemp, day);
                         while (nextDate < endDateTemp)
@@ -149,7 +149,7 @@ namespace Sheca.Services
                     if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
                     {
                         var sameEvents = new List<Event>();
-                        var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
+                        var removedEvents = e.GetExceptDates().ToDictionary(t => t, t => t);
                         var startDateTemp = (DateTime)e.RecurringStart > fromDate ? (DateTime)e.RecurringStart : fromDate;
                         var endDateTemp = (e.RecurringEnd.HasValue && e.RecurringEnd < endDate) ? (DateTime)e.RecurringEnd : endDate;
                         var timeSpan = e.EndTime - e.StartTime;
@@ -157,7 +157,7 @@ namespace Sheca.Services
                         //WEEK recurring
                         if (e.RecurringUnit == RecurringUnit.WEEK && e.RecurringDetails != null)
                         {
-                            List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
+                            List<DayOfWeek>? dayOfWeeksRecurrings = e.GetRecurringDetails();
                             foreach (var dayOfWeek in dayOfWeeksRecurrings)
                             {
                                 startDateTemp = Utils.GetNextWeekday(startDateTemp, dayOfWeek);
@@ -290,7 +290,7 @@ namespace Sheca.Services
                 if (e.RecurringInterval.HasValue && duration != 0 && e.RecurringStart.HasValue)
                 {
                     var sameEvents = new List<Event>();
-                    var removedEvents = e.ExceptDates.Split(";").ToDictionary(t => t, t => t);
+                    var removedEvents = e.GetExceptDates().ToDictionary(t => t, t => t);
                     var startDateTemp = (DateTime)e.RecurringStart > fromDate ? (DateTime)e.RecurringStart : fromDate;
                     var endDateTemp = (e.RecurringEnd.HasValue && e.RecurringEnd < endDate) ? (DateTime)e.RecurringEnd : endDate;
                     var timeSpan = e.EndTime - e.StartTime;
@@ -298,7 +298,7 @@ namespace Sheca.Services
                     //WEEK recurring
                     if (e.RecurringUnit == RecurringUnit.WEEK && e.RecurringDetails != null)
                     {
-                        List<DayOfWeek>? dayOfWeeksRecurrings = e.RecurringDetails.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList();
+                        List<DayOfWeek>? dayOfWeeksRecurrings = e.GetRecurringDetails();
                         foreach (var dayOfWeek in dayOfWeeksRecurrings)
                         {
                             startDateTemp = Utils.GetNextWeekday(startDateTemp, dayOfWeek);
@@ -524,7 +524,7 @@ namespace Sheca.Services
                     {
                         if (upE.StartTime.HasValue && upE.StartTime != currentEvent.StartTime && upE.EndTime != currentEvent.EndTime)
                         {
-                            var exceptDates = currentEvent.ExceptDates.Split(";").ToList();
+                            var exceptDates = currentEvent.GetExceptDates();
                             var newExceptDate = TimeSpan.FromTicks(upE.BeforeStartTime!.Value.Ticks).TotalSeconds.ToString();
                             if (!exceptDates.Contains(newExceptDate))
                             {
@@ -533,7 +533,7 @@ namespace Sheca.Services
                             }
                         }
 
-                        var newEv = currentEvent.Clone();
+                        var newEv = currentEvent.SimpleClone();
                         newEv.Id = Guid.NewGuid();
                         _mapper.Map(upE, newEv);
                         newEv.BaseEventId = eventId;

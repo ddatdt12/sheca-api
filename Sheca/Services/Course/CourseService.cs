@@ -131,105 +131,98 @@ namespace Sheca.Services
                 throw new ApiException("Course not found", 404);
             }
 
-            try
+            _mapper.Map(upCourse, course);
+            if (upCourse.NumOfLessonsPerDay.HasValue || upCourse.StartDate.HasValue || upCourse.EndDate.HasValue || upCourse.NumOfLessons.HasValue)
             {
-                _mapper.Map(upCourse, course);
-                if (upCourse.NumOfLessonsPerDay.HasValue || upCourse.StartDate.HasValue || upCourse.EndDate.HasValue || upCourse.NumOfLessons.HasValue)
+                int learnDay = 0;
+                DateTime startDate = upCourse.StartDate ?? course.StartDate;
+                DateTime endDate = upCourse.EndDate ?? course.EndDate;
+
+                List<DayOfWeek> dayOfWeeks = upCourse.DayOfWeeks != null ? upCourse.DayOfWeeks
+                    : course.DayOfWeeks.Split(';').Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
+
+                if (upCourse.StartDate.HasValue)
                 {
-                    int learnDay = 0;
-                    DateTime startDate = upCourse.StartDate ?? course.StartDate;
-                    DateTime endDate = upCourse.EndDate ?? course.EndDate;
+                    var totalDays = (endDate - startDate).TotalDays;
+                    learnDay = (int)Math.Round(totalDays / 7) + 1;
+                }
 
-                    List<DayOfWeek> dayOfWeeks = upCourse.DayOfWeeks != null ? upCourse.DayOfWeeks
-                        : course.DayOfWeeks.Split(';').Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
 
-                    if (upCourse.StartDate.HasValue)
+
+                var minDayIndex = 0;
+
+                for (int i = 0; i < dayOfWeeks.Count; i++)
+                {
+                    var tempDate = Utils.GetNextWeekday(startDate, dayOfWeeks[i]);
+                    if (tempDate < Utils.GetNextWeekday(startDate, dayOfWeeks[minDayIndex]))
                     {
-                        var totalDays = (endDate - startDate).TotalDays;
-                        learnDay = (int)Math.Round(totalDays / 7) + 1;
+                        minDayIndex = i;
                     }
+                }
 
+                DateTime date = Utils.GetNextWeekday(startDate, dayOfWeeks[minDayIndex]);
 
+                if (upCourse.NumOfLessons.HasValue)
+                {
+                    learnDay = (int)Math.Round(course.NumOfLessons * 1.0 / course.NumOfLessonsPerDay);
 
-                    var minDayIndex = 0;
-
-                    for (int i = 0; i < dayOfWeeks.Count; i++)
+                    if (date > endDate)
                     {
-                        var tempDate = Utils.GetNextWeekday(startDate, dayOfWeeks[i]);
-                        if (tempDate < Utils.GetNextWeekday(startDate, dayOfWeeks[minDayIndex]))
-                        {
-                            minDayIndex = i;
-                        }
+                        date = startDate;
                     }
-
-                    DateTime date = Utils.GetNextWeekday(startDate, dayOfWeeks[minDayIndex]);
-
-                    if (upCourse.NumOfLessons.HasValue)
+                    else if (dayOfWeeks.Count > 1)
                     {
-                        learnDay = (int)Math.Round(course.NumOfLessons * 1.0 / course.NumOfLessonsPerDay);
-
-                        if (date > endDate)
+                        //Tránh trường hợp lặp lại 1 ngày nếu như 1 tuần chỉ học 1 buổi
+                        for (int i = 1; i < learnDay; i++)
                         {
-                            date = startDate;
-                        }
-                        else if (dayOfWeeks.Count > 1)
-                        {
-                            //Tránh trường hợp lặp lại 1 ngày nếu như 1 tuần chỉ học 1 buổi
-                            for (int i = 1; i < learnDay; i++)
+                            minDayIndex++;
+                            if (minDayIndex >= dayOfWeeks.Count)
                             {
-                                minDayIndex++;
-                                if (minDayIndex >= dayOfWeeks.Count)
-                                {
-                                    minDayIndex = 0;
-                                }
-                                date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
+                                minDayIndex = 0;
                             }
+                            date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
                         }
-                        else
-                        {
-                            date = date.AddDays(7 * learnDay);
-                        }
-
-                        course.EndDate = date;
-                        //course.EndType = course.StartDate.AddDays((learnDay - 1) * 7);
                     }
                     else
                     {
-                        int numberOfLessons = 1;
-
-                        if (dayOfWeeks.Count > 1)
-                        {
-                            while (date < endDate)
-                            {
-                                minDayIndex++;
-                                numberOfLessons++;
-                                if (minDayIndex >= dayOfWeeks.Count)
-                                {
-                                    minDayIndex = 0;
-                                }
-                                date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
-                            }
-                        }
-                        else
-                        {
-                            while (date < endDate)
-                            {
-                                numberOfLessons++;
-                                date = date.AddDays(7);
-                            }
-                        }
-
-                        course.NumOfLessons = numberOfLessons * course.NumOfLessonsPerDay;
+                        date = date.AddDays(7 * learnDay);
                     }
 
+                    course.EndDate = date;
+                    //course.EndType = course.StartDate.AddDays((learnDay - 1) * 7);
                 }
-                await _context.SaveChangesAsync();
-                return course;
+                else
+                {
+                    int numberOfLessons = 1;
+
+                    if (dayOfWeeks.Count > 1)
+                    {
+                        while (date < endDate)
+                        {
+                            minDayIndex++;
+                            numberOfLessons++;
+                            if (minDayIndex >= dayOfWeeks.Count)
+                            {
+                                minDayIndex = 0;
+                            }
+                            date = Utils.GetNextWeekday(date, dayOfWeeks[minDayIndex]);
+                        }
+                    }
+                    else
+                    {
+                        while (date < endDate)
+                        {
+                            numberOfLessons++;
+                            date = date.AddDays(7);
+                        }
+                    }
+
+                    course.NumOfLessons = numberOfLessons * course.NumOfLessonsPerDay;
+                }
+
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            await _context.SaveChangesAsync();
+            return course;
         }
 
         public async Task Delete(int id, Guid userId)
@@ -239,15 +232,10 @@ namespace Sheca.Services
             {
                 throw new ApiException("Course not found", 404);
             }
-            try
-            {
-                _context.Entry(course).State = EntityState.Deleted;
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+
+            _context.Entry(course).State = EntityState.Deleted;
+            await _context.SaveChangesAsync();
+
         }
 
         private bool IsValidCourseTask(Course course, DateTime date)
