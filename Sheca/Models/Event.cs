@@ -69,6 +69,15 @@ namespace Sheca.Models
             clone.RecurringEnd = null;
             return clone;
         }
+        public void UnsubcribeRecurring()
+        {
+            ExceptDates = "";
+            RecurringInterval = null;
+            RecurringDetails = null;
+            RecurringUnit  = null;
+            RecurringStart = null;
+            RecurringEnd = null;
+        }
     }
 
 

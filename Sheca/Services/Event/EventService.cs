@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Sheca.Dtos;
 using Sheca.Error;
+using Sheca.Extensions;
 using Sheca.Helper;
 using Sheca.Models;
 using static Sheca.Common.Enum;
@@ -480,7 +481,7 @@ namespace Sheca.Services
             {
                 throw new ApiException("Bad request", 400);
             }
-            var eventId = upE.CloneEventId ?? upE.Id;
+            var eventId = upE.CloneEventId ?? upE.BaseEventId ?? upE.Id;
 
             string typeId = upE.CloneEventId.HasValue ? "CloneId" : (upE.BaseEventId.HasValue ? "BaseId" : "Main");
             if (upE.Id == upE.CloneEventId)
@@ -488,7 +489,7 @@ namespace Sheca.Services
                 typeId = "Main";
             }
 
-            var currentEvent = await _context.Events.FindAsync(eventId);
+            Event? currentEvent = await _context.Events.FindAsync(eventId);
             if (currentEvent == null || currentEvent.UserId.ToString() != userId)
             {
                 throw new ApiException("Event not exist!", 404);
@@ -553,17 +554,11 @@ namespace Sheca.Services
                         throw new ApiException("Please provide start time of this event", 400);
                     }
 
-                    var newEv = currentEvent.Clone();
+                    var newEv = currentEvent.SimpleClone();
                     _mapper.Map(upE, newEv);
                     newEv.Id = Guid.NewGuid();
+                    newEv.BaseEventId = null;
                     newEv.RecurringStart = newEv.StartTime;
-                    _mapper.Map(upE, newEv);
-
-                    if (!upE.HasRecurringChanged() || (!upE.StartTime.HasValue || upE.StartTime?.Date == upE.BeforeStartTime?.Date))
-                    {
-                        newEv.BaseEventId = newEv.Id;
-                    }
-
 
                     await _context.Events.AddAsync(newEv);
 
@@ -571,9 +566,18 @@ namespace Sheca.Services
 
                     _context.Events.RemoveRange(events);
                     var recurringInterval = upE.RecurringInterval ?? currentEvent.RecurringInterval;
-                    if (recurringInterval.HasValue)
+                    var recurringUnit = upE.RecurringUnit ?? currentEvent.RecurringUnit;
+                    if (recurringInterval.HasValue && recurringUnit.HasValue)
                     {
-                        currentEvent.RecurringEnd = upE.BeforeStartTime?.Date.AddSeconds(-1.0 * (double)recurringInterval);
+                        var newRecurringEndTime = upE.BeforeStartTime?.Date.AddTimeByRecurringUnit(-1 * recurringInterval ?? 0, (RecurringUnit)recurringUnit).AddSeconds(-1.0 * (double)recurringInterval);
+                        if (newRecurringEndTime <= currentEvent.RecurringStart)
+                        {
+                            currentEvent.UnsubcribeRecurring();
+                        }
+                        else
+                        {
+                            currentEvent.RecurringEnd = newRecurringEndTime;
+                        }
                     }
 
                     if (currentEvent.Id == upE.Id)
