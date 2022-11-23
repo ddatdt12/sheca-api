@@ -516,6 +516,10 @@ namespace Sheca.Services
                     }
                     var listNotUsedEvents = await _context.Events.Where(e => e.BaseEventId == eventId).ToListAsync(cancellationToken);
                     _context.Events.RemoveRange(listNotUsedEvents);
+                    if (upE.HasRecurringChanged())
+                    {
+                        currentEvent.ClearExceptDates();
+                    }
                     _mapper.Map(upE, currentEvent);
                     await _context.BulkSaveChangesAsync(cancellationToken);
                 }

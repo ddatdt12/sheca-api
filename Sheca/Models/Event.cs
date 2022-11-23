@@ -44,6 +44,10 @@ namespace Sheca.Models
         public DateTime? RecurringEnd { get; set; }
         public string ExceptDates { get; set; }
 
+        public void ClearExceptDates()
+        {
+            ExceptDates = "";
+        }
         public List<DayOfWeek> GetRecurringDetails()
         {
             return RecurringDetails?.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList() ?? new List<DayOfWeek>();

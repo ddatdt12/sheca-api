@@ -32,5 +32,6 @@ namespace Sheca.Dtos
         {
             return RecurringStart.HasValue || RecurringEnd.HasValue || RecurringUnit.HasValue || RecurringInterval.HasValue || RecurringDetails != null && RecurringDetails.Any();
         }
+
     }
 }
