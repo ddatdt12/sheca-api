@@ -30,8 +30,7 @@ namespace Sheca.Controllers
         {
             var userId = HttpContext.Items["UserId"] as string;
             var events = await _eventService.Get(userId!, filter, cT);
-
-            var eventDtos = _mapper.Map<IEnumerable<Event>, IEnumerable<EventDto>>(events);
+            var eventDtos = _mapper.Map<IEnumerable<Event>,  IEnumerable<EventDto>>(events);
             return Ok(new ApiResponse<IEnumerable<EventDto>>(eventDtos, "Get Events successfully"));
         }
 

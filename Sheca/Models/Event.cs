@@ -18,6 +18,7 @@ namespace Sheca.Models
             EndTime = DateTime.Now;
             ColorCode = "#1a73e8";
             ExceptDates = string.Empty;
+            RecurringDetails = string.Empty;
         }
 
         public Guid Id { get; set; }
