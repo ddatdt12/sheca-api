@@ -206,6 +206,7 @@ namespace Sheca.Services
                     }
                     else
                     {
+                        e.CloneEventId = e.Id;
                         finalEvents.Add(e);
                     }
                 });

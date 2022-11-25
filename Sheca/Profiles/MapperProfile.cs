@@ -23,11 +23,7 @@ public class MapperProfile : Profile
 
         //Event
         CreateMap<Event, EventDto>().ForMember(e => e.RecurringDetails,
-         opt =>
-         {
-             opt.PreCondition(e => e.RecurringDetails != null);
-             opt.MapFrom(cE => cE.RecurringDetails != null ? cE.RecurringDetails.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(d => (DayOfWeek)int.Parse(d)).ToList() : null);
-         })
+         opt => opt.MapFrom(cE => cE.RecurringDetails != null ? cE.RecurringDetails.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(d => (DayOfWeek)int.Parse(d)).ToList() : null))
          .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<CreateEventDto, Event>().ForMember(e => e.RecurringDetails,
