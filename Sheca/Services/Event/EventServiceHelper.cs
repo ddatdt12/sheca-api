@@ -5,7 +5,6 @@ namespace Sheca.Services
 {
     public partial class EventService
     {
-
         private bool IsValidEventDate(DateTime originalDate, DateTime date, RecurringUnit unit, int value, string? recurringDetails)
         {
             var days = (date - originalDate).Days;
@@ -23,7 +22,7 @@ namespace Sheca.Services
                     {
                         return false;
                     }
-                    var recurringDetailsList = recurringDetails.Split(";").Select(d => (DayOfWeek)(int.Parse(d)));
+                    var recurringDetailsList = recurringDetails.Split(";", StringSplitOptions.RemoveEmptyEntries).Select(d => (DayOfWeek)(int.Parse(d)));
 
                     foreach (var item in recurringDetailsList)
                     {

@@ -18,6 +18,7 @@ namespace Sheca.Models
             EndTime = DateTime.Now;
             ColorCode = "#1a73e8";
             ExceptDates = string.Empty;
+            RecurringDetails = string.Empty;
         }
 
         public Guid Id { get; set; }
@@ -50,11 +51,11 @@ namespace Sheca.Models
         }
         public List<DayOfWeek> GetRecurringDetails()
         {
-            return RecurringDetails?.Split(';').Select(d => (DayOfWeek)int.Parse(d)).ToList() ?? new List<DayOfWeek>();
+            return RecurringDetails?.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(d => (DayOfWeek)int.Parse(d)).ToList() ?? new List<DayOfWeek>();
         }
         public List<string> GetExceptDates()
         {
-            var exceptDates = ExceptDates.Split(";").Where(d => !string.IsNullOrEmpty(d)).ToList();
+            var exceptDates = ExceptDates.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList();
             return exceptDates;
         }
         public Event Clone()
