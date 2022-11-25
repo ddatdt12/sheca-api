@@ -263,7 +263,7 @@ namespace Sheca.Services
                 var timeSpan = c.EndTime - c.StartTime;
 
                 //Tìm ngày hợp lệ gần nhất
-                foreach (var day in c.DayOfWeeks.Split(";").Select(d => (DayOfWeek)int.Parse(d)))
+                foreach (var day in c.GetDayOfWeeks())
                 {
                     var nextDate = Utils.GetNextWeekday(startDateTemp, day);
                     while (nextDate < endDateTemp)

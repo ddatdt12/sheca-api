@@ -38,8 +38,7 @@ namespace Sheca.Services
                 DateTime endDate = c.EndDate ?? course.EndDate;
 
                 List<DayOfWeek> dayOfWeeks = c.DayOfWeeks != null ? c.DayOfWeeks
-                    : course.DayOfWeeks.Split(';').Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
-
+                    : course.DayOfWeeks.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
 
                 var minDayIndex = 0;
 
@@ -138,8 +137,9 @@ namespace Sheca.Services
                 DateTime startDate = upCourse.StartDate ?? course.StartDate;
                 DateTime endDate = upCourse.EndDate ?? course.EndDate;
 
+                //From string enum
                 List<DayOfWeek> dayOfWeeks = upCourse.DayOfWeeks != null ? upCourse.DayOfWeeks
-                    : course.DayOfWeeks.Split(';').Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
+                    : course.DayOfWeeks.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(d => d.ToEnum(startDate.DayOfWeek)).ToList();
 
                 if (upCourse.StartDate.HasValue)
                 {

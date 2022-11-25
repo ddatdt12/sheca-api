@@ -37,12 +37,12 @@ namespace Sheca.Models
 
         public List<DateTime> GetOffDaysList()
         {
-            var offDays = OffDays.Split(";").Where(d => !string.IsNullOrEmpty(d)).Select(d => DateTime.Parse(d));
+            var offDays = OffDays.Split(";",StringSplitOptions.RemoveEmptyEntries).Select(d => DateTime.Parse(d));
             return offDays.ToList();
         }
         public List<DayOfWeek> GetDayOfWeeks()
         {
-            var offDays = DayOfWeeks.Split(";").Where(d => !string.IsNullOrEmpty(d)).Select(d => (DayOfWeek)(int.Parse(d)));
+            var offDays = DayOfWeeks.Split(";", StringSplitOptions.RemoveEmptyEntries).Select(d => (DayOfWeek)(int.Parse(d)));
             return offDays.ToList();
         }
     }
